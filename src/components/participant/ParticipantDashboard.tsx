@@ -137,28 +137,51 @@ const CompactTaskCard: React.FC<{
     return (
       <div
         onClick={onClick}
-        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg ${
+        className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg ${
           localIsCompleted
-            ? "bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 border-purple-200/50 shadow-purple-100/50"
+            ? "bg-gradient-to-br from-purple-50/90 via-violet-50/80 to-indigo-50/90 border-purple-300/70 shadow-purple-200/40 ring-2 ring-purple-200/20 hover:ring-purple-300/30"
             : isUnlocked
             ? "bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 border-blue-200/50 shadow-blue-100/30 hover:shadow-blue-200/50"
             : "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200/50 opacity-60"
-        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-purple-200/50" : ""}`}
+        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-purple-300/60 ring-4 ring-purple-200/40" : ""}`}
       >
-        {/* Subtle background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
+        {/* Sophisticated background pattern with layered effects */}
+        <div className={`absolute inset-0 transition-all duration-500 ${
+          localIsCompleted 
+            ? "bg-gradient-to-br from-purple-100/20 via-violet-100/15 to-indigo-100/20" 
+            : "bg-gradient-to-br from-white/20 to-transparent"
+        }`} />
+        
+        {/* Success shimmer effect for completed tasks */}
+        {localIsCompleted && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-200/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+        )}
+        
+        {/* Subtle success glow for completed tasks */}
+        {localIsCompleted && (
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-400/20 via-violet-400/30 to-indigo-400/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        )}
+        
+        {/* Success pattern overlay for completed tasks */}
+        {localIsCompleted && (
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-2 right-2 w-8 h-8 border-2 border-purple-400 rounded-full" />
+            <div className="absolute bottom-2 left-2 w-6 h-6 border-2 border-violet-400 rounded-full" />
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 border-2 border-indigo-400 rounded-full" />
+          </div>
+        )}
         
         <div className="p-3 relative">
           <div className="flex items-center justify-between">
             {/* Compact left side */}
             <div className="flex items-center space-x-2 flex-1 min-w-0">
-              {/* Compact day icon */}
+              {/* Compact day icon with sophisticated purple treatment */}
               <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-md ${
+                className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg transition-all duration-300 ${
                   task.dayNumber === 0
                     ? "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 to-violet-600"
+                    ? "bg-gradient-to-br from-purple-400 via-violet-500 to-indigo-600 ring-2 ring-purple-200/60 shadow-purple-200/50 group-hover:shadow-purple-300/60 group-hover:ring-purple-300/80 group-hover:scale-105"
                     : isUnlocked
                     ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
@@ -167,7 +190,12 @@ const CompactTaskCard: React.FC<{
                 {!isUnlocked ? (
                   <Lock className="w-3 h-3" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-3 h-3" />
+                  <div className="relative">
+                    <CheckCircle className="w-3 h-3" />
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full flex items-center justify-center">
+                      <div className="w-1 h-1 bg-purple-500 rounded-full" />
+                    </div>
+                  </div>
                 ) : (
                   <span className="text-xs">{getDayIcon(task.dayNumber)}</span>
                 )}
@@ -176,9 +204,9 @@ const CompactTaskCard: React.FC<{
               {/* Compact content */}
               <div className="flex-1 min-w-0">
                 <h3
-                  className={`font-bold text-sm leading-tight truncate ${
+                  className={`font-bold text-sm leading-tight truncate transition-colors duration-300 ${
                     localIsCompleted
-                      ? "text-purple-900"
+                      ? "text-purple-800 group-hover:text-purple-900"
                       : isUnlocked
                       ? "text-gray-900"
                       : "text-gray-500"
@@ -187,20 +215,22 @@ const CompactTaskCard: React.FC<{
                   {task.title}
                 </h3>
 
-                {/* Compact points display */}
+                {/* Enhanced points display with sophisticated purple treatment */}
                 <div className="flex items-center space-x-2 mt-0.5">
                   <span
-                    className={`text-xs font-medium ${
-                      localIsCompleted ? "text-purple-600" : "text-amber-600"
+                    className={`text-xs font-semibold transition-all duration-300 ${
+                      localIsCompleted 
+                        ? "text-purple-600 bg-purple-100/60 px-2 py-0.5 rounded-full group-hover:bg-purple-200/80 group-hover:text-purple-700" 
+                        : "text-amber-600"
                     }`}
                   >
                     {localIsCompleted
-                      ? `+${task.points} pts`
+                      ? `✓ +${task.points} pts`
                       : `${task.points} pts`}
                   </span>
-                  <div className={`w-1 h-1 rounded-full ${
+                  <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                       localIsCompleted
-                        ? "bg-purple-500"
+                        ? "bg-gradient-to-r from-purple-400 to-violet-500 shadow-sm"
                         : isUnlocked
                         ? "bg-blue-500"
                         : "bg-gray-400"
@@ -214,13 +244,13 @@ const CompactTaskCard: React.FC<{
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 shadow-md ${
+                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg ${
                   localIsUpdating
                     ? "bg-gray-400 text-white cursor-not-allowed"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-purple-200/50"
+                    ? "bg-gradient-to-br from-purple-400 via-violet-500 to-indigo-600 text-white hover:shadow-purple-300/60 ring-2 ring-purple-200/40 hover:ring-purple-300/60 hover:scale-105 hover:shadow-purple-400/40"
                     : "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-blue-200/50"
-                } ${localJustCompleted ? "animate-bounce" : ""}`}
+                } ${localJustCompleted ? "animate-bounce shadow-2xl shadow-purple-400/60" : ""}`}
               >
                 {localIsUpdating ? (
                   <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
