@@ -1,0 +1,265 @@
+{
+  "tasks": [
+    {
+      "dayNumber": 0,
+      "title": "Welcome to Your Muslim Identity Journey",
+      "description": "Begin your 14-day journey by reflecting on what it means to be a proud Muslim. Take a moment to set your intentions and prepare your heart for this transformative experience.",
+      "points": 15,
+      "category": "trial",
+      "difficulty": "easy",
+      "estimatedTime": "10 minutes",
+      "tips": [
+        "Find a quiet place for reflection",
+        "Write down your intentions in a journal",
+        "Make du'a for guidance throughout this journey"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 1,
+      "title": "Master the Five Daily Prayers",
+      "description": "Establish and perfect your five daily prayers (Salah). Focus on performing each prayer on time with proper concentration and remembrance of Allah.",
+      "points": 25,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": "Throughout the day",
+      "tips": [
+        "Set prayer reminders on your phone",
+        "Learn the meanings of the surahs you recite",
+        "Find a clean, quiet space for each prayer",
+        "Make du'a after each prayer"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 2,
+      "title": "Connect with Your Muslim Community",
+      "description": "Reach out to fellow Muslims in your community. Attend a local mosque event, join a study circle, or simply have a meaningful conversation with a Muslim friend or family member.",
+      "points": 20,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": "2-3 hours",
+      "tips": [
+        "Visit your local mosque's website for events",
+        "Join online Muslim community groups",
+        "Invite a Muslim friend for coffee or tea",
+        "Attend Friday prayers (Jumu'ah) if possible"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 3,
+      "title": "Learn 10 New Arabic Phrases",
+      "description": "Expand your Arabic vocabulary by learning 10 common Islamic phrases and their meanings. Practice using them throughout your day to strengthen your connection to Islamic tradition.",
+      "points": 30,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": "45 minutes",
+      "tips": [
+        "Use flashcards or mobile apps for memorization",
+        "Practice pronunciation with online audio resources",
+        "Try to use each phrase in context during your day",
+        "Focus on phrases from daily prayers and Quran"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 4,
+      "title": "Practice Islamic Values in Daily Interactions",
+      "description": "Consciously embody Islamic values like honesty, kindness, patience, and justice in all your interactions today. Reflect on how your faith guides your behavior.",
+      "points": 25,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": "Throughout the day",
+      "tips": [
+        "Start each interaction with 'Assalamu Alaikum'",
+        "Practice patience in challenging situations",
+        "Show extra kindness to those in need",
+        "Be honest in all your dealings"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 5,
+      "title": "Read and Reflect on Quran",
+      "description": "Dedicate time to reading the Quran with contemplation. Choose a surah or verses that resonate with you and reflect deeply on their meanings and applications to your life.",
+      "points": 35,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": "1 hour",
+      "tips": [
+        "Read both Arabic and translation",
+        "Use a reliable tafsir (commentary) for deeper understanding",
+        "Take notes on verses that speak to you",
+        "Make du'a for guidance and understanding"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 6,
+      "title": "Share Islamic Knowledge with Others",
+      "description": "Share something beneficial you've learned about Islam with a friend, family member, or on social media. Focus on spreading knowledge in a respectful and engaging way.",
+      "points": 25,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": "30 minutes",
+      "tips": [
+        "Choose authentic sources for your information",
+        "Share personal experiences alongside knowledge",
+        "Be respectful of different perspectives",
+        "Use social media wisely to spread positivity"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 7,
+      "title": "Study Islamic History and Scholars",
+      "description": "Learn about influential Islamic scholars, historical events, or Islamic contributions to science and civilization. Choose a topic that interests you and dive deep.",
+      "points": 30,
+      "category": "knowledge",
+      "difficulty": "hard",
+      "estimatedTime": "2 hours",
+      "tips": [
+        "Start with well-known scholars like Ibn Sina or Al-Ghazali",
+        "Use reputable Islamic educational websites",
+        "Take notes and create a personal knowledge journal",
+        "Discuss your learnings with knowledgeable Muslims"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 8,
+      "title": "Express Your Muslim Identity Confidently",
+      "description": "Find ways to express your Muslim identity with confidence and pride. This could be through your dress, speech, actions, or simply by being unashamed of your beliefs in public.",
+      "points": 25,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": "Throughout the day",
+      "tips": [
+        "Wear Islamic symbols or modest clothing with pride",
+        "Use Islamic greetings in appropriate settings",
+        "Don't hesitate to mention your prayer times when needed",
+        "Share your Islamic perspective respectfully when relevant"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 9,
+      "title": "Perform Extra Acts of Worship",
+      "description": "Go beyond your obligatory acts of worship. Perform extra prayers (nafl), make additional dhikr, read extra Quran, or engage in other voluntary acts of worship.",
+      "points": 30,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": "1-2 hours",
+      "tips": [
+        "Perform 2 rakats of Tahajjud prayer before Fajr",
+        "Make dhikr during free moments throughout the day",
+        "Recite Surah Al-Mulk before sleeping",
+        "Make du'a during the blessed times of day"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 10,
+      "title": "Engage in Islamic Community Service",
+      "description": "Participate in community service through an Islamic organization or mosque. Help with food drives, charity work, or volunteer at Islamic events.",
+      "points": 35,
+      "category": "social",
+      "difficulty": "hard",
+      "estimatedTime": "3-4 hours",
+      "tips": [
+        "Contact your local mosque for volunteer opportunities",
+        "Join Islamic charity organizations",
+        "Help organize community iftars or events",
+        "Mentor younger Muslims in your community"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 11,
+      "title": "Deepen Your Understanding of Islamic Jurisprudence",
+      "description": "Study an aspect of Islamic law (fiqh) that's relevant to your daily life. Learn about the wisdom behind Islamic rulings and how they apply to modern situations.",
+      "points": 35,
+      "category": "knowledge",
+      "difficulty": "hard",
+      "estimatedTime": "2-3 hours",
+      "tips": [
+        "Choose topics relevant to your daily life",
+        "Consult multiple reliable scholarly sources",
+        "Ask knowledgeable scholars if you have questions",
+        "Understand the wisdom behind the rulings"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 12,
+      "title": "Stand Up for Islamic Values",
+      "description": "Find an opportunity to respectfully advocate for Islamic values or correct misconceptions about Islam. This could be in person, online, or through your actions.",
+      "points": 30,
+      "category": "identity",
+      "difficulty": "hard",
+      "estimatedTime": "Varies",
+      "tips": [
+        "Prepare yourself with knowledge before speaking",
+        "Approach discussions with wisdom and good manners",
+        "Use your actions to demonstrate Islamic values",
+        "Be patient and respectful with those who disagree"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 13,
+      "title": "Create Islamic Content or Art",
+      "description": "Express your faith creatively by creating Islamic content, art, writing, videos, or any form of creative expression that reflects your Muslim identity and values.",
+      "points": 35,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": "2-4 hours",
+      "tips": [
+        "Write Islamic poetry or reflective articles",
+        "Create Islamic calligraphy or geometric art",
+        "Make educational videos about Islam",
+        "Design inspiring Islamic quotes for social media"
+      ],
+      "isActive": true
+    },
+    {
+      "dayNumber": 14,
+      "title": "Commit to Your Ongoing Islamic Journey",
+      "description": "Reflect on your 14-day journey and make concrete commitments for continuing your growth as a proud Muslim. Create a personal action plan for maintaining and building upon what you've learned.",
+      "points": 40,
+      "category": "final",
+      "difficulty": "easy",
+      "estimatedTime": "1 hour",
+      "tips": [
+        "Write a reflection journal about your journey",
+        "Set specific, measurable goals for the future",
+        "Find an accountability partner for continued growth",
+        "Make du'a for consistency and strength in your faith",
+        "Plan to repeat or extend this challenge in the future"
+      ],
+      "isActive": true
+    }
+  ],
+  "importMetadata": {
+    "version": "1.0",
+    "createdDate": "2025-09-09",
+    "description": "14-Day Proud Muslim Challenge - Complete task set designed to help Muslims strengthen their identity, knowledge, worship, and community connections",
+    "totalTasks": 15,
+    "categories": {
+      "trial": 1,
+      "worship": 3,
+      "social": 3,
+      "knowledge": 3,
+      "identity": 4,
+      "final": 1
+    },
+    "difficultyDistribution": {
+      "easy": 4,
+      "medium": 7,
+      "hard": 4
+    },
+    "totalPoints": 425,
+    "averageEstimatedTime": "1-2 hours per day"
+  }
+}
