@@ -38,8 +38,9 @@ const CompactTaskCard: React.FC<{
   ) => void;
   isUpdating: boolean;
   onClick: () => void;
+  sequenceNumber: number;
 }> = React.memo(
-  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick }) => {
+  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick, sequenceNumber }) => {
     // Create a unique instance ID for this specific card to prevent cross-card interference
     const [instanceId] = useState(
       () =>
@@ -112,26 +113,8 @@ const CompactTaskCard: React.FC<{
       ]
     );
 
-    const getDayIcon = useCallback((dayNumber: number) => {
-      if (dayNumber === 0) return "🚀";
-      const dayIcons = [
-        "📚",
-        "🕌",
-        "📖",
-        "🤲",
-        "💫",
-        "🌙",
-        "⭐",
-        "🔥",
-        "💪",
-        "🎯",
-        "🏆",
-        "✨",
-        "🌟",
-        "👑",
-        "💎",
-      ];
-      return dayIcons[dayNumber - 1] || "📝";
+    const getSequenceNumber = useCallback((index: number) => {
+      return (index + 1).toString();
     }, []);
 
     return (
@@ -175,13 +158,13 @@ const CompactTaskCard: React.FC<{
           <div className="flex items-center justify-between">
             {/* Compact left side */}
             <div className="flex items-center space-x-2 flex-1 min-w-0">
-              {/* Compact day icon with sophisticated purple treatment */}
+              {/* Compact day icon with sophisticated treatment */}
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg transition-all duration-300 ${
                   task.dayNumber === 0
                     ? "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-400 via-violet-500 to-indigo-600 ring-2 ring-purple-200/60 shadow-purple-200/50 group-hover:shadow-purple-300/60 group-hover:ring-purple-300/80 group-hover:scale-105"
+                    ? "bg-gradient-to-br from-blue-400 to-indigo-500 ring-2 ring-blue-200/60 shadow-blue-200/50 group-hover:shadow-blue-300/60 group-hover:ring-blue-300/80 group-hover:scale-105"
                     : isUnlocked
                     ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
@@ -189,15 +172,8 @@ const CompactTaskCard: React.FC<{
               >
                 {!isUnlocked ? (
                   <Lock className="w-3 h-3" />
-                ) : localIsCompleted ? (
-                  <div className="relative">
-                    <CheckCircle className="w-3 h-3" />
-                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full flex items-center justify-center">
-                      <div className="w-1 h-1 bg-purple-500 rounded-full" />
-                    </div>
-                  </div>
                 ) : (
-                  <span className="text-xs">{getDayIcon(task.dayNumber)}</span>
+                  <span className="text-xs font-bold">{getSequenceNumber(sequenceNumber)}</span>
                 )}
               </div>
 
@@ -244,18 +220,18 @@ const CompactTaskCard: React.FC<{
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg ${
+                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
                   localIsUpdating
-                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    ? "bg-gray-400 text-white cursor-not-allowed shadow-lg"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-400 via-violet-500 to-indigo-600 text-white hover:shadow-purple-300/60 ring-2 ring-purple-200/40 hover:ring-purple-300/60 hover:scale-105 hover:shadow-purple-400/40"
-                    : "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-blue-200/50"
-                } ${localJustCompleted ? "animate-bounce shadow-2xl shadow-purple-400/60" : ""}`}
+                    ? "bg-transparent text-purple-600 hover:scale-105"
+                    : "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-blue-200/50 shadow-lg"
+                } ${localJustCompleted ? "animate-bounce" : ""}`}
               >
                 {localIsUpdating ? (
                   <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-3 h-3" />
+                  <CheckCircle className="w-4 h-4" />
                 ) : (
                   <Target className="w-3 h-3" />
                 )}
@@ -912,7 +888,7 @@ const ParticipantDashboard: React.FC = () => {
                         className="space-y-3 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                         style={{ maxHeight: "calc(100vh - 280px)" }}
                       >
-                      {getCurrentDayTasks().map((task) => {
+                      {getCurrentDayTasks().map((task, index) => {
                         // Fix: Use task.id as the key instead of dayNumber
                         const taskKey = task.id;
                         const isCompleted = userProgress?.progress?.[taskKey] === true;
@@ -933,6 +909,7 @@ const ParticipantDashboard: React.FC = () => {
                             onToggle={handleTaskToggle}
                             isUpdating={isUpdating}
                             onClick={() => handleTaskClick(task)}
+                            sequenceNumber={index}
                           />
                         );
                       })}
