@@ -168,15 +168,13 @@ const CompactTaskCard: React.FC<{
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
         )}
         
-        <div className={`p-3 relative ${
-          localIsCompleted ? "backdrop-blur-sm" : ""
-        }`}>
-          <div className="flex items-center justify-between">
-            {/* Compact left side */}
-            <div className="flex items-center space-x-2 flex-1 min-w-0">
-              {/* Enhanced day icon with completion states */}
+        <div className="p-3 relative h-16 flex items-center">
+          <div className="flex items-center justify-between w-full">
+            {/* Left side - Icon and content */}
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              {/* Day icon */}
               <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg transition-all duration-300 ${
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg transition-all duration-300 flex-shrink-0 ${
                   task.dayNumber === 0
                     ? localIsCompleted
                       ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 shadow-emerald-400/50"
@@ -186,22 +184,18 @@ const CompactTaskCard: React.FC<{
                     : isUnlocked
                     ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
-                } ${
-                  localIsCompleted ? "animate-pulse" : ""
                 }`}
               >
                 {!isUnlocked ? (
                   <Lock className="w-4 h-4" />
                 ) : localIsCompleted ? (
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-white" />
-                  </div>
+                  <CheckCircle className="w-5 h-5 text-white" />
                 ) : (
                   <span className="text-sm">{getDayIcon(task.dayNumber)}</span>
                 )}
               </div>
 
-              {/* Enhanced content section */}
+              {/* Content */}
               <div className="flex-1 min-w-0">
                 <h3
                   className={`font-bold text-sm leading-tight truncate transition-all duration-300 ${
@@ -215,8 +209,8 @@ const CompactTaskCard: React.FC<{
                   {task.title}
                 </h3>
 
-                {/* Enhanced points display with completion state */}
-                <div className="flex items-center space-x-2 mt-1">
+                {/* Points display */}
+                <div className="flex items-center space-x-1 mt-0.5">
                   {localIsCompleted ? (
                     <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/30">
                       <Star className="w-3 h-3 text-yellow-300" />
@@ -225,78 +219,44 @@ const CompactTaskCard: React.FC<{
                       </span>
                     </div>
                   ) : (
-                    <>
-                      <span className="text-xs font-medium text-amber-600">
-                        {task.points} pts
-                      </span>
-                      <div className={`w-1 h-1 rounded-full ${
-                        isUnlocked ? "bg-blue-500" : "bg-gray-400"
-                      }`} />
-                      <span className="text-xs text-gray-500 capitalize">
-                        {task.difficulty}
-                      </span>
-                    </>
+                    <span className="text-xs font-medium text-amber-600">
+                      {task.points} pts
+                    </span>
                   )}
                 </div>
-
-                {/* Category badge for completed tasks */}
-                {localIsCompleted && (
-                  <div className="mt-1">
-                    <span className="text-xs text-white/80 bg-white/10 px-2 py-0.5 rounded-full capitalize border border-white/20">
-                      {task.category}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Enhanced action button with Islamic-inspired design */}
+            {/* Action button */}
             {isUnlocked && (
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg transform ${
+                className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg flex-shrink-0 ${
                   localIsUpdating
-                    ? "bg-gray-400 text-white cursor-not-allowed scale-95"
+                    ? "bg-gray-400 text-white cursor-not-allowed"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white hover:shadow-emerald-300/50 hover:scale-105 ring-2 ring-white/50"
-                    : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-300/50 hover:scale-105"
+                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white hover:shadow-emerald-300/50 ring-2 ring-white/50"
+                    : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-300/50"
                 } ${
-                  localJustCompleted ? "animate-bounce scale-110" : ""
+                  localJustCompleted ? "scale-110" : "hover:scale-105"
                 }`}
               >
                 {localIsUpdating ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : localIsCompleted ? (
-                  <div className="relative">
-                    <CheckCircle className="w-6 h-6" />
-                    {/* Success sparkle effect */}
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full animate-ping opacity-75" />
-                  </div>
+                  <CheckCircle className="w-5 h-5" />
                 ) : (
-                  <div className="relative">
-                    <Target className="w-5 h-5" />
-                    <div className="absolute inset-0 bg-white/20 rounded-2xl animate-pulse" />
-                  </div>
-                )}
-                
-                {/* Islamic-inspired geometric accent */}
-                {localIsCompleted && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <Star className="w-2 h-2 text-white" />
-                  </div>
+                  <Target className="w-4 h-4" />
                 )}
               </button>
             )}
           </div>
 
-          {/* Completion celebration overlay */}
+          {/* Minimal celebration overlay */}
           {localJustCompleted && (
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-amber-400/30 to-orange-400/20 animate-pulse rounded-2xl" />
-              <div className="absolute top-2 left-2 w-2 h-2 bg-yellow-400 rounded-full animate-bounce" />
-              <div className="absolute top-4 right-4 w-1 h-1 bg-amber-400 rounded-full animate-ping" />
-              <div className="absolute bottom-3 left-6 w-1 h-1 bg-orange-400 rounded-full animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-amber-400/20 to-orange-400/10 animate-pulse rounded-2xl" />
             </div>
           )}
         </div>
