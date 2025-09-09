@@ -86,10 +86,10 @@ const CompactTaskCard: React.FC<{
         if (!localIsCompleted) {
           setLocalJustCompleted(true);
 
-          // Clear celebration effect after animation (only for this card)
+          // Enhanced celebration effect with longer duration
           setTimeout(() => {
             setLocalJustCompleted(false);
-          }, 1000);
+          }, 2000); // Extended to 2 seconds for better visual impact
         }
 
         // Call parent handler
@@ -113,23 +113,22 @@ const CompactTaskCard: React.FC<{
     );
 
     const getDayIcon = useCallback((dayNumber: number) => {
-      if (dayNumber === 0) return "🚀";
+      if (dayNumber === 0) return "🚀"; // Trial day
       const dayIcons = [
-        "📚",
-        "🕌",
-        "📖",
-        "🤲",
-        "💫",
-        "🌙",
-        "⭐",
-        "🔥",
-        "💪",
-        "🎯",
-        "🏆",
-        "✨",
-        "🌟",
-        "👑",
-        "💎",
+        "🕌", // Day 1 - Mosque/Prayer
+        "📿", // Day 2 - Dhikr/Remembrance
+        "📖", // Day 3 - Quran/Learning
+        "🤲", // Day 4 - Dua/Supplication
+        "🌙", // Day 5 - Islamic Symbol
+        "⭐", // Day 6 - Guidance
+        "💫", // Day 7 - Blessings
+        "🕋", // Day 8 - Kaaba/Hajj
+        "📚", // Day 9 - Knowledge
+        "🎯", // Day 10 - Focus/Goals
+        "🏆", // Day 11 - Achievement
+        "✨", // Day 12 - Excellence
+        "🌟", // Day 13 - Shining
+        "👑", // Day 14 - Victory/Crown
       ];
       return dayIcons[dayNumber - 1] || "📝";
     }, []);
@@ -137,48 +136,77 @@ const CompactTaskCard: React.FC<{
     return (
       <div
         onClick={onClick}
-        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg ${
+        className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] ${
           localIsCompleted
-            ? "bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 border-purple-200/50 shadow-purple-100/50"
+            ? "bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 border-purple-300/50 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/40 hover:shadow-2xl"
             : isUnlocked
             ? "bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 border-blue-200/50 shadow-blue-100/30 hover:shadow-blue-200/50"
             : "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200/50 opacity-60"
-        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-purple-200/50" : ""}`}
+        } ${
+          localJustCompleted
+            ? "animate-pulse scale-105 shadow-2xl shadow-purple-400/60"
+            : ""
+        }`}
       >
-        {/* Subtle background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
+        {/* Enhanced background patterns for completed tasks */}
+        {localIsCompleted ? (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5" />
+            <div className="absolute top-2 right-2 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-white" />
+            </div>
+            {/* Islamic geometric pattern overlay */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 left-0 w-full h-full" 
+                   style={{
+                     backgroundImage: 'radial-gradient(circle at 25% 25%, white 1px, transparent 1px), radial-gradient(circle at 75% 75%, white 1px, transparent 1px)',
+                     backgroundSize: '8px 8px'
+                   }} />
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
+        )}
         
-        <div className="p-3 relative">
+        <div className={`p-3 relative ${
+          localIsCompleted ? "backdrop-blur-sm" : ""
+        }`}>
           <div className="flex items-center justify-between">
             {/* Compact left side */}
             <div className="flex items-center space-x-2 flex-1 min-w-0">
-              {/* Compact day icon */}
+              {/* Enhanced day icon with completion states */}
               <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-md ${
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg transition-all duration-300 ${
                   task.dayNumber === 0
-                    ? "bg-gradient-to-br from-purple-500 to-indigo-600"
+                    ? localIsCompleted
+                      ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 shadow-emerald-400/50"
+                      : "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 to-violet-600"
+                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 shadow-emerald-400/50 ring-2 ring-white/30"
                     : isUnlocked
                     ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
+                } ${
+                  localIsCompleted ? "animate-pulse" : ""
                 }`}
               >
                 {!isUnlocked ? (
-                  <Lock className="w-3 h-3" />
+                  <Lock className="w-4 h-4" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-3 h-3" />
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </div>
                 ) : (
-                  <span className="text-xs">{getDayIcon(task.dayNumber)}</span>
+                  <span className="text-sm">{getDayIcon(task.dayNumber)}</span>
                 )}
               </div>
 
-              {/* Compact content */}
+              {/* Enhanced content section */}
               <div className="flex-1 min-w-0">
                 <h3
-                  className={`font-bold text-sm leading-tight truncate ${
+                  className={`font-bold text-sm leading-tight truncate transition-all duration-300 ${
                     localIsCompleted
-                      ? "text-purple-900"
+                      ? "text-white drop-shadow-sm"
                       : isUnlocked
                       ? "text-gray-900"
                       : "text-gray-500"
@@ -187,51 +215,90 @@ const CompactTaskCard: React.FC<{
                   {task.title}
                 </h3>
 
-                {/* Compact points display */}
-                <div className="flex items-center space-x-2 mt-0.5">
-                  <span
-                    className={`text-xs font-medium ${
-                      localIsCompleted ? "text-purple-600" : "text-amber-600"
-                    }`}
-                  >
-                    {localIsCompleted
-                      ? `+${task.points} pts`
-                      : `${task.points} pts`}
-                  </span>
-                  <div className={`w-1 h-1 rounded-full ${
-                      localIsCompleted
-                        ? "bg-purple-500"
-                        : isUnlocked
-                        ? "bg-blue-500"
-                        : "bg-gray-400"
-                  }`} />
+                {/* Enhanced points display with completion state */}
+                <div className="flex items-center space-x-2 mt-1">
+                  {localIsCompleted ? (
+                    <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/30">
+                      <Star className="w-3 h-3 text-yellow-300" />
+                      <span className="text-xs font-bold text-white">
+                        +{task.points} earned!
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-xs font-medium text-amber-600">
+                        {task.points} pts
+                      </span>
+                      <div className={`w-1 h-1 rounded-full ${
+                        isUnlocked ? "bg-blue-500" : "bg-gray-400"
+                      }`} />
+                      <span className="text-xs text-gray-500 capitalize">
+                        {task.difficulty}
+                      </span>
+                    </>
+                  )}
                 </div>
+
+                {/* Category badge for completed tasks */}
+                {localIsCompleted && (
+                  <div className="mt-1">
+                    <span className="text-xs text-white/80 bg-white/10 px-2 py-0.5 rounded-full capitalize border border-white/20">
+                      {task.category}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Compact action button */}
+            {/* Enhanced action button with Islamic-inspired design */}
             {isUnlocked && (
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 shadow-md ${
+                className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg transform ${
                   localIsUpdating
-                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    ? "bg-gray-400 text-white cursor-not-allowed scale-95"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-purple-200/50"
-                    : "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-blue-200/50"
-                } ${localJustCompleted ? "animate-bounce" : ""}`}
+                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white hover:shadow-emerald-300/50 hover:scale-105 ring-2 ring-white/50"
+                    : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-300/50 hover:scale-105"
+                } ${
+                  localJustCompleted ? "animate-bounce scale-110" : ""
+                }`}
               >
                 {localIsUpdating ? (
-                  <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-3 h-3" />
+                  <div className="relative">
+                    <CheckCircle className="w-6 h-6" />
+                    {/* Success sparkle effect */}
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full animate-ping opacity-75" />
+                  </div>
                 ) : (
-                  <Target className="w-3 h-3" />
+                  <div className="relative">
+                    <Target className="w-5 h-5" />
+                    <div className="absolute inset-0 bg-white/20 rounded-2xl animate-pulse" />
+                  </div>
+                )}
+                
+                {/* Islamic-inspired geometric accent */}
+                {localIsCompleted && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <Star className="w-2 h-2 text-white" />
+                  </div>
                 )}
               </button>
             )}
           </div>
+
+          {/* Completion celebration overlay */}
+          {localJustCompleted && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-amber-400/30 to-orange-400/20 animate-pulse rounded-2xl" />
+              <div className="absolute top-2 left-2 w-2 h-2 bg-yellow-400 rounded-full animate-bounce" />
+              <div className="absolute top-4 right-4 w-1 h-1 bg-amber-400 rounded-full animate-ping" />
+              <div className="absolute bottom-3 left-6 w-1 h-1 bg-orange-400 rounded-full animate-pulse" />
+            </div>
+          )}
         </div>
       </div>
     );
