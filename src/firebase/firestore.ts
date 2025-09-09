@@ -16,6 +16,24 @@ import {
 import { db } from './config';
 import { UserRole } from './auth';
 
+// Debounce leaderboard updates to avoid too frequent updates
+let leaderboardUpdateTimeout: NodeJS.Timeout | null = null;
+
+// Debounced leaderboard update function
+const debouncedUpdateLeaderboard = () => {
+  if (leaderboardUpdateTimeout) {
+    clearTimeout(leaderboardUpdateTimeout);
+  }
+  
+  leaderboardUpdateTimeout = setTimeout(async () => {
+    try {
+      await updateLeaderboard();
+    } catch (error) {
+      console.warn('Debounced leaderboard update failed:', error);
+    }
+  }, 2000); // Wait 2 seconds before updating
+};
+
 export interface Task {
   id: string;
   dayNumber: number;
@@ -410,34 +428,39 @@ export const updateUserProgress = async (
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     
-    if (userDoc.exists()) {
-      const userData = userDoc.data() as UserRole;
-      const currentPoints = userData.points || {};
-      const currentTotalPoints = userData.totalPoints || 0;
-      
-      let newTotalPoints = currentTotalPoints;
-      
-      if (completed) {
-        // Add points if task is completed
-        currentPoints[day] = points;
-        newTotalPoints = currentTotalPoints + points;
-      } else {
-        // Remove points if task is uncompleted
-        const previousPoints = currentPoints[day] || 0;
-        newTotalPoints = currentTotalPoints - previousPoints;
-        currentPoints[day] = 0;
-      }
-      
-      await updateDoc(userRef, {
-        [`progress.${day}`]: completed,
-        points: currentPoints,
-        totalPoints: Math.max(0, newTotalPoints),
-        updatedAt: serverTimestamp()
-      });
-      
-      // Update leaderboard after progress update
-      await updateLeaderboard();
+    if (!userDoc.exists()) {
+      throw new Error('User document not found');
     }
+    
+    const userData = userDoc.data() as UserRole;
+    const currentPoints = userData.points || {};
+    const currentTotalPoints = userData.totalPoints || 0;
+    
+    let newTotalPoints = currentTotalPoints;
+    
+    if (completed) {
+      // Add points if task is completed
+      currentPoints[day] = points;
+      newTotalPoints = currentTotalPoints + points;
+    } else {
+      // Remove points if task is uncompleted
+      const previousPoints = currentPoints[day] || 0;
+      newTotalPoints = currentTotalPoints - previousPoints;
+      currentPoints[day] = 0;
+    }
+    
+    await updateDoc(userRef, {
+      [`progress.${day}`]: completed,
+      points: currentPoints,
+      totalPoints: Math.max(0, newTotalPoints),
+      updatedAt: serverTimestamp()
+    });
+    
+    console.log(`✅ User progress updated: ${day} = ${completed ? 'completed' : 'incomplete'}, points: ${points}`);
+    
+    // Update leaderboard after progress update (debounced, non-blocking)
+    debouncedUpdateLeaderboard();
+    
   } catch (error) {
     console.error('Error updating user progress:', error);
     throw error;
@@ -876,6 +899,11 @@ export const updateLeaderboard = async (): Promise<void> => {
   try {
     const participants = await getParticipants();
     
+    if (participants.length === 0) {
+      console.log('No participants found, skipping leaderboard update');
+      return;
+    }
+    
     // Sort by total points, then by completed tasks
     const sortedParticipants = participants.sort((a, b) => {
       if (b.totalPoints !== a.totalPoints) {
@@ -884,17 +912,41 @@ export const updateLeaderboard = async (): Promise<void> => {
       return b.completedTasks - a.completedTasks;
     });
     
-    // Update ranks
-    const batch = writeBatch(db);
-    sortedParticipants.forEach((participant, index) => {
-      const userRef = doc(db, 'users', participant.userId);
-      batch.update(userRef, { rank: index + 1 });
+    // Only update if there are changes in ranking
+    const needsUpdate = sortedParticipants.some((participant, index) => {
+      const expectedRank = index + 1;
+      return participant.rank !== expectedRank;
     });
     
-    await batch.commit();
+    if (!needsUpdate) {
+      console.log('No ranking changes detected, skipping leaderboard update');
+      return;
+    }
+    
+    // Update ranks in smaller batches to avoid conflicts
+    const batchSize = 10;
+    for (let i = 0; i < sortedParticipants.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const batchParticipants = sortedParticipants.slice(i, i + batchSize);
+      
+      batchParticipants.forEach((participant, batchIndex) => {
+        const userRef = doc(db, 'users', participant.userId);
+        const globalIndex = i + batchIndex;
+        batch.update(userRef, { 
+          rank: globalIndex + 1,
+          updatedAt: serverTimestamp()
+        });
+      });
+      
+      await batch.commit();
+      console.log(`Updated leaderboard batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(sortedParticipants.length / batchSize)}`);
+    }
+    
+    console.log('Leaderboard updated successfully');
   } catch (error) {
     console.error('Error updating leaderboard:', error);
-    throw error;
+    // Don't throw the error to prevent blocking user progress updates
+    console.warn('Leaderboard update failed, but user progress was saved');
   }
 };
 
