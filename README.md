@@ -1,5 +1,10 @@
 # 14-Day Proud Muslim Challenge
 
+# 14-Day Proud Muslim Challenge 🌙
+
+[![Deploy to Firebase Hosting](https://github.com/your-username/14-day-muslim-challenge/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/your-username/14-day-muslim-challenge/actions/workflows/firebase-hosting-merge.yml)
+[![Live App](https://img.shields.io/badge/Live%20App-Firebase-orange)](https://focus-challenge2.web.app)
+
 A beautiful, interactive web application to help Muslims strengthen their Islamic identity through a structured 14-day challenge program.
 
 ## 🌙 Features
@@ -112,9 +117,28 @@ npm run build
 - **Islamic Colors**: Green palette representing growth and peace
 - **Halal Design**: Respectful and modest visual approach
 
-## 🚀 Deployment Options
+## 🚀 Deployment
 
-### Firebase Hosting (Recommended)
+### 🔄 Automatic Deployment (GitHub + Firebase)
+
+This project is set up for automatic deployment to Firebase Hosting via GitHub Actions.
+
+**Live URL**: https://focus-challenge2.web.app
+
+#### Setup Instructions:
+1. Follow the setup guide in `GITHUB_SETUP.md`
+2. Push to the `main` branch to trigger automatic deployment
+3. View deployment status in the GitHub Actions tab
+
+#### Deployment Process:
+- **Push to GitHub** → Automatic build & deploy
+- **Pull Requests** → Preview deployments
+- **Build Time**: ~2-3 minutes
+- **Zero Downtime**: Seamless updates
+
+### 🚀 Manual Deployment Options
+
+#### Firebase Hosting (Current Setup)
 ```bash
 # Install Firebase CLI
 npm install -g firebase-tools
