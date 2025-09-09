@@ -86,10 +86,10 @@ const CompactTaskCard: React.FC<{
         if (!localIsCompleted) {
           setLocalJustCompleted(true);
 
-          // Enhanced celebration effect with longer duration
+          // Clear celebration effect after animation (only for this card)
           setTimeout(() => {
             setLocalJustCompleted(false);
-          }, 2000); // Extended to 2 seconds for better visual impact
+          }, 1000);
         }
 
         // Call parent handler
@@ -113,22 +113,23 @@ const CompactTaskCard: React.FC<{
     );
 
     const getDayIcon = useCallback((dayNumber: number) => {
-      if (dayNumber === 0) return "🚀"; // Trial day
+      if (dayNumber === 0) return "🚀";
       const dayIcons = [
-        "🕌", // Day 1 - Mosque/Prayer
-        "📿", // Day 2 - Dhikr/Remembrance
-        "📖", // Day 3 - Quran/Learning
-        "🤲", // Day 4 - Dua/Supplication
-        "🌙", // Day 5 - Islamic Symbol
-        "⭐", // Day 6 - Guidance
-        "💫", // Day 7 - Blessings
-        "🕋", // Day 8 - Kaaba/Hajj
-        "📚", // Day 9 - Knowledge
-        "🎯", // Day 10 - Focus/Goals
-        "🏆", // Day 11 - Achievement
-        "✨", // Day 12 - Excellence
-        "🌟", // Day 13 - Shining
-        "👑", // Day 14 - Victory/Crown
+        "📚",
+        "🕌",
+        "📖",
+        "🤲",
+        "💫",
+        "🌙",
+        "⭐",
+        "🔥",
+        "💪",
+        "🎯",
+        "🏆",
+        "✨",
+        "🌟",
+        "👑",
+        "💎",
       ];
       return dayIcons[dayNumber - 1] || "📝";
     }, []);
@@ -136,71 +137,48 @@ const CompactTaskCard: React.FC<{
     return (
       <div
         onClick={onClick}
-        className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] ${
+        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg ${
           localIsCompleted
-            ? "bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 border-purple-300/50 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/40 hover:shadow-2xl"
+            ? "bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 border-purple-200/50 shadow-purple-100/50"
             : isUnlocked
             ? "bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 border-blue-200/50 shadow-blue-100/30 hover:shadow-blue-200/50"
             : "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200/50 opacity-60"
-        } ${
-          localJustCompleted
-            ? "animate-pulse scale-105 shadow-2xl shadow-purple-400/60"
-            : ""
-        }`}
+        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-purple-200/50" : ""}`}
       >
-        {/* Enhanced background patterns for completed tasks */}
-        {localIsCompleted ? (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5" />
-            <div className="absolute top-2 right-2 w-6 h-6 bg-white/25 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <CheckCircle className="w-4 h-4 text-white" />
-            </div>
-            {/* Islamic geometric pattern overlay */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-full h-full" 
-                   style={{
-                     backgroundImage: 'radial-gradient(circle at 25% 25%, white 1px, transparent 1px), radial-gradient(circle at 75% 75%, white 1px, transparent 1px)',
-                     backgroundSize: '8px 8px'
-                   }} />
-            </div>
-          </>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
-        )}
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
         
-        <div className="p-3 relative h-16 flex items-center">
-          <div className="flex items-center justify-between w-full">
-            {/* Left side - Icon and content */}
-            <div className="flex items-center space-x-3 flex-1 min-w-0">
-              {/* Day icon */}
+        <div className="p-3 relative">
+          <div className="flex items-center justify-between">
+            {/* Compact left side */}
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              {/* Compact day icon */}
               <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg transition-all duration-300 flex-shrink-0 ${
+                className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-md ${
                   task.dayNumber === 0
-                    ? localIsCompleted
-                      ? "bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-700 shadow-purple-400/50 ring-2 ring-purple-300/40"
-                      : "bg-gradient-to-br from-purple-500 to-indigo-600"
+                    ? "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-700 shadow-purple-400/50 ring-2 ring-purple-300/40"
+                    ? "bg-gradient-to-br from-purple-500 to-violet-600"
                     : isUnlocked
                     ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
                 }`}
               >
                 {!isUnlocked ? (
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-3 h-3" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-5 h-5 text-white" />
+                  <CheckCircle className="w-3 h-3" />
                 ) : (
-                  <span className="text-sm">{getDayIcon(task.dayNumber)}</span>
+                  <span className="text-xs">{getDayIcon(task.dayNumber)}</span>
                 )}
               </div>
 
-              {/* Content */}
+              {/* Compact content */}
               <div className="flex-1 min-w-0">
                 <h3
-                  className={`font-bold text-sm leading-tight truncate transition-all duration-300 ${
+                  className={`font-bold text-sm leading-tight truncate ${
                     localIsCompleted
-                      ? "text-white drop-shadow-sm"
+                      ? "text-purple-900"
                       : isUnlocked
                       ? "text-gray-900"
                       : "text-gray-500"
@@ -209,56 +187,51 @@ const CompactTaskCard: React.FC<{
                   {task.title}
                 </h3>
 
-                {/* Points display */}
-                <div className="flex items-center space-x-1 mt-0.5">
-                  {localIsCompleted ? (
-                    <div className="flex items-center space-x-1 bg-white/25 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/40">
-                      <Star className="w-3 h-3 text-amber-200" />
-                      <span className="text-xs font-bold text-white">
-                        +{task.points} earned!
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs font-medium text-amber-600">
-                      {task.points} pts
-                    </span>
-                  )}
+                {/* Compact points display */}
+                <div className="flex items-center space-x-2 mt-0.5">
+                  <span
+                    className={`text-xs font-medium ${
+                      localIsCompleted ? "text-purple-600" : "text-amber-600"
+                    }`}
+                  >
+                    {localIsCompleted
+                      ? `+${task.points} pts`
+                      : `${task.points} pts`}
+                  </span>
+                  <div className={`w-1 h-1 rounded-full ${
+                      localIsCompleted
+                        ? "bg-purple-500"
+                        : isUnlocked
+                        ? "bg-blue-500"
+                        : "bg-gray-400"
+                  }`} />
                 </div>
               </div>
             </div>
 
-            {/* Action button */}
+            {/* Compact action button */}
             {isUnlocked && (
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg flex-shrink-0 ${
+                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 shadow-md ${
                   localIsUpdating
                     ? "bg-gray-400 text-white cursor-not-allowed"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-700 text-white hover:shadow-purple-400/50 ring-2 ring-purple-300/40"
-                    : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-300/50"
-                } ${
-                  localJustCompleted ? "scale-110" : "hover:scale-105"
-                }`}
+                    ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-purple-200/50"
+                    : "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-blue-200/50"
+                } ${localJustCompleted ? "animate-bounce" : ""}`}
               >
                 {localIsUpdating ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-5 h-5" />
+                  <CheckCircle className="w-3 h-3" />
                 ) : (
-                  <Target className="w-4 h-4" />
+                  <Target className="w-3 h-3" />
                 )}
               </button>
             )}
           </div>
-
-          {/* Minimal celebration overlay */}
-          {localJustCompleted && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400/15 via-violet-400/25 to-indigo-400/15 animate-pulse rounded-2xl" />
-            </div>
-          )}
         </div>
       </div>
     );
