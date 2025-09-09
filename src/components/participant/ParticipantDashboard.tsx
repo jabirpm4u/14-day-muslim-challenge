@@ -152,7 +152,7 @@ const CompactTaskCard: React.FC<{
         {localIsCompleted ? (
           <>
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5" />
-            <div className="absolute top-2 right-2 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="absolute top-2 right-2 w-6 h-6 bg-white/25 rounded-full flex items-center justify-center backdrop-blur-sm">
               <CheckCircle className="w-4 h-4 text-white" />
             </div>
             {/* Islamic geometric pattern overlay */}
@@ -177,10 +177,10 @@ const CompactTaskCard: React.FC<{
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg transition-all duration-300 flex-shrink-0 ${
                   task.dayNumber === 0
                     ? localIsCompleted
-                      ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 shadow-emerald-400/50"
+                      ? "bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-700 shadow-purple-400/50 ring-2 ring-purple-300/40"
                       : "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 shadow-emerald-400/50 ring-2 ring-white/30"
+                    ? "bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-700 shadow-purple-400/50 ring-2 ring-purple-300/40"
                     : isUnlocked
                     ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
@@ -212,8 +212,8 @@ const CompactTaskCard: React.FC<{
                 {/* Points display */}
                 <div className="flex items-center space-x-1 mt-0.5">
                   {localIsCompleted ? (
-                    <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/30">
-                      <Star className="w-3 h-3 text-yellow-300" />
+                    <div className="flex items-center space-x-1 bg-white/25 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/40">
+                      <Star className="w-3 h-3 text-amber-200" />
                       <span className="text-xs font-bold text-white">
                         +{task.points} earned!
                       </span>
@@ -236,7 +236,7 @@ const CompactTaskCard: React.FC<{
                   localIsUpdating
                     ? "bg-gray-400 text-white cursor-not-allowed"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 text-white hover:shadow-emerald-300/50 ring-2 ring-white/50"
+                    ? "bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-700 text-white hover:shadow-purple-400/50 ring-2 ring-purple-300/40"
                     : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-300/50"
                 } ${
                   localJustCompleted ? "scale-110" : "hover:scale-105"
@@ -256,7 +256,7 @@ const CompactTaskCard: React.FC<{
           {/* Minimal celebration overlay */}
           {localJustCompleted && (
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-amber-400/20 to-orange-400/10 animate-pulse rounded-2xl" />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400/15 via-violet-400/25 to-indigo-400/15 animate-pulse rounded-2xl" />
             </div>
           )}
         </div>
