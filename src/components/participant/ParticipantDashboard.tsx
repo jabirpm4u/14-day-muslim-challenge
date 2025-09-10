@@ -43,7 +43,7 @@ const CompactTaskCard: React.FC<{
   sequenceNumber: number;
   trackingDate: string;
 }> = React.memo(
-  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick, sequenceNumber, trackingDate }) => {
+  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick, sequenceNumber }) => {
     // Create a unique instance ID for this specific card to prevent cross-card interference
     const [instanceId] = useState(
       () =>

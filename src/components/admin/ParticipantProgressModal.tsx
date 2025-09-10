@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, Circle, Calendar, Star, Target, Award, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, CheckCircle, Circle, Star, Target, Award, ChevronDown, ChevronRight } from 'lucide-react';
 import { UserProgress, Task } from '../../firebase/firestore';
 
 interface ParticipantProgressModalProps {
