@@ -11,6 +11,7 @@ import {
   orderBy,
   where,
   writeBatch,
+  Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './config';
@@ -47,13 +48,26 @@ export interface Task {
   tips?: string[]; // Optional tips for completing the task
 }
 
+export interface ChallengeDay {
+  dayNumber: number;
+  scheduledDate: any; // Firebase timestamp for when this day should be active
+  trackingDate: any; // Firebase timestamp for yesterday (what we're tracking)
+  isActive: boolean;
+  isCompleted: boolean;
+  activatedAt?: any; // When this day was actually activated
+}
+
 export interface ChallengeSettings {
   id: string;
   isActive: boolean; // Whether challenge is currently running
+  isPaused: boolean; // Whether challenge is paused
   startDate: any; // Firebase timestamp
   currentDay: number; // Current active day (0 = trial, 1-14 = actual days)
   dayDuration: number; // Duration of each day in hours (default 24)
   trialEnabled: boolean; // Whether trial day is enabled
+  challengeDays: ChallengeDay[]; // Array of all 15 days with their dates
+  pausedAt?: any; // When challenge was paused
+  resumedAt?: any; // When challenge was last resumed
   createdAt: any;
   updatedAt: any;
 }
@@ -534,6 +548,58 @@ export const resetParticipantProgress = async (userId: string): Promise<void> =>
   }
 };
 
+// Delete participant permanently
+export const deleteParticipant = async (userId: string): Promise<void> => {
+  try {
+    console.log(`🗑️ Starting deletion for user: ${userId}`);
+    
+    // Verify user exists first
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userDoc.data() as UserRole;
+    
+    // Verify user is a participant (safety check)
+    if (userData.role !== 'participant') {
+      throw new Error('Can only delete participants, not admin users');
+    }
+    
+    console.log(`🔍 Deleting participant: ${userData.name} (${userData.email})`);
+    
+    // Delete the user document
+    await deleteDoc(userRef);
+    
+    console.log(`✅ Successfully deleted participant: ${userData.name}`);
+    
+    // Update leaderboard after deletion
+    console.log('🏆 Updating leaderboard after deletion...');
+    await updateLeaderboard();
+    
+    console.log('🎉 Deletion operation completed successfully');
+  } catch (error) {
+    console.error('❌ Error deleting participant:', error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('permission')) {
+        throw new Error('Insufficient permissions to delete participant. Please ensure you are logged in as an admin.');
+      } else if (error.message.includes('not found')) {
+        throw new Error('Participant not found. They may have already been deleted or the ID is incorrect.');
+      } else if (error.message.includes('admin')) {
+        throw new Error('Cannot delete admin users for security reasons.');
+      } else {
+        throw new Error(`Deletion failed: ${error.message}`);
+      }
+    } else {
+      throw new Error('Unknown error occurred during deletion operation.');
+    }
+  }
+};
+
 // Enhanced Create or update task function
 export const createOrUpdateTask = async (task: Omit<Task, 'id'> & { id?: string }): Promise<void> => {
   try {
@@ -651,19 +717,83 @@ export const getUserProgress = async (userId: string): Promise<UserRole | null> 
 
 // Challenge Settings Functions
 
+// Helper function to generate challenge days with proper date tracking
+const generateChallengeDays = (startDate: Date, dayDuration: number): ChallengeDay[] => {
+  const days: ChallengeDay[] = [];
+  
+  // Generate all 15 days (0-14)
+  for (let dayNumber = 0; dayNumber <= 14; dayNumber++) {
+    const scheduledDate = new Date(startDate.getTime() + (dayNumber * dayDuration * 60 * 60 * 1000));
+    
+    // Tracking date is the day before the scheduled date (yesterday's tracking)
+    const trackingDate = new Date(scheduledDate.getTime() - (24 * 60 * 60 * 1000));
+    
+    days.push({
+      dayNumber,
+      scheduledDate: Timestamp.fromDate(scheduledDate),
+      trackingDate: Timestamp.fromDate(trackingDate),
+      isActive: dayNumber === 0, // Only trial day starts active
+      isCompleted: false
+    });
+  }
+  
+  return days;
+};
+
+// Helper function to calculate current day based on elapsed time
+const calculateCurrentDay = (startDate: Date, dayDuration: number, isPaused: boolean, pausedAt?: Date): number => {
+  if (isPaused && pausedAt) {
+    // If paused, calculate based on time until pause
+    const elapsed = pausedAt.getTime() - startDate.getTime();
+    const daysPassed = Math.floor(elapsed / (dayDuration * 60 * 60 * 1000));
+    return Math.min(Math.max(daysPassed, 0), 14);
+  }
+  
+  // Calculate based on current time
+  const now = new Date();
+  const elapsed = now.getTime() - startDate.getTime();
+  const daysPassed = Math.floor(elapsed / (dayDuration * 60 * 60 * 1000));
+  return Math.min(Math.max(daysPassed, 0), 14);
+};
+
+// Helper function to recalculate remaining days when resuming
+const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: number, resumeDate: Date, dayDuration: number): ChallengeDay[] => {
+  const updatedDays = [...originalDays];
+  
+  // Update remaining days starting from the paused day
+  for (let i = pausedDay; i <= 14; i++) {
+    const dayOffset = i - pausedDay;
+    const newScheduledDate = new Date(resumeDate.getTime() + (dayOffset * dayDuration * 60 * 60 * 1000));
+    const newTrackingDate = new Date(newScheduledDate.getTime() - (24 * 60 * 60 * 1000));
+    
+    updatedDays[i] = {
+      ...updatedDays[i],
+      scheduledDate: Timestamp.fromDate(newScheduledDate),
+      trackingDate: Timestamp.fromDate(newTrackingDate)
+    };
+  }
+  
+  return updatedDays;
+};
+
 // Initialize challenge settings with default values
 export const initializeChallengeSettings = async (): Promise<ChallengeSettings> => {
   try {
     console.log('Initializing challenge settings...');
     
     const settingsRef = doc(db, 'settings', 'challenge');
+    const now = new Date();
+    const challengeDays = generateChallengeDays(now, 24);
+    
     const defaultSettings: ChallengeSettings = {
       id: 'challenge',
       isActive: false,
+      isPaused: false,
       startDate: null,
       currentDay: 0,
       dayDuration: 24, // 24 hours
       trialEnabled: true,
+      challengeDays,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -715,10 +845,12 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
       const defaultSettings: ChallengeSettings = {
         id: 'challenge',
         isActive: false,
+        isPaused: false,
         startDate: null,
         currentDay: 0,
         dayDuration: 24,
         trialEnabled: true,
+        challengeDays: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         ...settings
@@ -744,10 +876,10 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
   }
 };
 
-// Start challenge
+// Start challenge with automatic date generation
 export const startChallenge = async (): Promise<void> => {
   try {
-    console.log('Starting challenge...');
+    console.log('Starting challenge with automatic date tracking...');
     
     // First ensure default tasks exist
     const tasksQuery = query(collection(db, 'tasks'));
@@ -758,14 +890,29 @@ export const startChallenge = async (): Promise<void> => {
       await initializeDefaultTasks();
     }
     
+    // Generate challenge dates starting from now
+    const startDate = new Date();
+    const challengeDays = generateChallengeDays(startDate, 24); // 24 hours per day
+    
+    console.log('Generated challenge schedule:');
+    challengeDays.forEach(day => {
+      const scheduledDate = day.scheduledDate.toDate();
+      const trackingDate = day.trackingDate.toDate();
+      console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
+    });
+    
     // Update challenge settings
     const settings: Partial<ChallengeSettings> = {
       isActive: true,
-      startDate: serverTimestamp(),
-      currentDay: 0 // Start with trial day
+      isPaused: false,
+      startDate: Timestamp.fromDate(startDate),
+      currentDay: 0, // Start with trial day
+      challengeDays,
+      pausedAt: null,
+      resumedAt: null
     };
     
-    console.log('Updating challenge settings...', settings);
+    console.log('Updating challenge settings...');
     await updateChallengeSettings(settings);
     
     // Activate trial day task (day 0)
@@ -786,10 +933,9 @@ export const startChallenge = async (): Promise<void> => {
       console.warn('No trial day tasks found to activate');
     }
     
-    console.log('Challenge started successfully!');
+    console.log('Challenge started successfully with 14-day schedule!');
   } catch (error) {
     console.error('Detailed error starting challenge:', error);
-    // Log the error details for debugging
     if (error instanceof Error) {
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
@@ -806,7 +952,10 @@ export const stopChallenge = async (): Promise<void> => {
     
     const settings: Partial<ChallengeSettings> = {
       isActive: false,
-      currentDay: 0
+      isPaused: false,
+      currentDay: 0,
+      pausedAt: null,
+      resumedAt: null
     };
     
     console.log('Updating challenge settings to inactive...');
@@ -835,6 +984,105 @@ export const stopChallenge = async (): Promise<void> => {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
+    throw error;
+  }
+};
+
+// Pause challenge
+export const pauseChallenge = async (): Promise<void> => {
+  try {
+    console.log('Pausing challenge...');
+    
+    const settings: Partial<ChallengeSettings> = {
+      isPaused: true,
+      pausedAt: serverTimestamp()
+    };
+    
+    console.log('Updating challenge settings to paused...');
+    await updateChallengeSettings(settings);
+    
+    // Deactivate all tasks (pause acts like stop for now)
+    const tasksQuery = query(collection(db, 'tasks'));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    
+    console.log('Found tasks to deactivate during pause:', tasksSnapshot.size);
+    
+    if (!tasksSnapshot.empty) {
+      const batch = writeBatch(db);
+      tasksSnapshot.docs.forEach(taskDoc => {
+        batch.update(taskDoc.ref, { isActive: false });
+      });
+      await batch.commit();
+      console.log('All tasks deactivated for pause');
+    }
+    
+    console.log('Challenge paused successfully!');
+  } catch (error) {
+    console.error('Error pausing challenge:', error);
+    throw error;
+  }
+};
+
+// Resume challenge with recalculated dates
+export const resumeChallenge = async (): Promise<void> => {
+  try {
+    console.log('Resuming challenge...');
+    
+    // Get current settings to calculate where we left off
+    const currentSettings = await getChallengeSettings();
+    if (!currentSettings || !currentSettings.isPaused || !currentSettings.pausedAt) {
+      throw new Error('Challenge is not currently paused');
+    }
+    
+    const resumeDate = new Date();
+    const pausedAt = currentSettings.pausedAt.toDate();
+    const startDate = currentSettings.startDate.toDate();
+    
+    // Calculate which day we were on when paused
+    const pausedDay = calculateCurrentDay(startDate, currentSettings.dayDuration, true, pausedAt);
+    
+    // Recalculate remaining challenge days from resume point
+    const updatedChallengeDays = recalculateChallengeDays(
+      currentSettings.challengeDays,
+      pausedDay,
+      resumeDate,
+      currentSettings.dayDuration
+    );
+    
+    console.log('Recalculated challenge schedule from resume:');
+    updatedChallengeDays.slice(pausedDay).forEach(day => {
+      const scheduledDate = day.scheduledDate.toDate();
+      const trackingDate = day.trackingDate.toDate();
+      console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
+    });
+    
+    const settings: Partial<ChallengeSettings> = {
+      isPaused: false,
+      resumedAt: serverTimestamp(),
+      currentDay: Math.max(pausedDay, 0), // Resume from paused day or trial
+      challengeDays: updatedChallengeDays
+    };
+    
+    console.log(`Resuming challenge from Day ${pausedDay}...`);
+    await updateChallengeSettings(settings);
+    
+    // Activate current day tasks
+    const currentDayTasks = query(collection(db, 'tasks'), where('dayNumber', '==', Math.max(pausedDay, 0)));
+    const currentTasksSnapshot = await getDocs(currentDayTasks);
+    
+    if (!currentTasksSnapshot.empty) {
+      const batch = writeBatch(db);
+      currentTasksSnapshot.docs.forEach(taskDoc => {
+        console.log('Reactivating task:', taskDoc.data().title);
+        batch.update(taskDoc.ref, { isActive: true });
+      });
+      await batch.commit();
+      console.log(`Day ${pausedDay} tasks reactivated successfully`);
+    }
+    
+    console.log('Challenge resumed successfully!');
+  } catch (error) {
+    console.error('Error resuming challenge:', error);
     throw error;
   }
 };

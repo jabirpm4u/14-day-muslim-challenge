@@ -109,11 +109,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 
             </div>
             
             {/* Debug info */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* {process.env.NODE_ENV === 'development' && (
               <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                Debug: Showing {leaderboard.length} participants (max: {maxEntries})
+                Showing {leaderboard.length} participants (max: {maxEntries})
               </div>
-            )}
+            )} */}
             
             <div className="space-y-3">
               {leaderboard.map((entry) => {

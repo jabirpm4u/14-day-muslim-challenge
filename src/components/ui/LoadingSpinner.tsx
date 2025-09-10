@@ -1,7 +1,9 @@
 import React from 'react';
 import { Moon, Sparkles } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoadingSpinner: React.FC = () => {
+  const { isRefreshing } = useAuth();
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-islamic-light to-white islamic-pattern">
       <div className="text-center">
@@ -21,11 +23,16 @@ const LoadingSpinner: React.FC = () => {
         {/* Loading Text */}
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-islamic-dark">
-            Loading your Islamic journey...
+            {isRefreshing ? 'Refreshing for better experience...' : 'Loading your Islamic journey...'}
           </h3>
           <p className="text-sm text-islamic-primary">
             بِسْمِ اللّهِ الرَّحْمـَنِ الرَّحِيم
           </p>
+          {isRefreshing && (
+            <p className="text-xs text-islamic-secondary animate-pulse">
+              Please wait, fixing connection issues...
+            </p>
+          )}
         </div>
 
         {/* Animated Dots */}

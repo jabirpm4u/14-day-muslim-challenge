@@ -39,8 +39,9 @@ const CompactTaskCard: React.FC<{
   isUpdating: boolean;
   onClick: () => void;
   sequenceNumber: number;
+  trackingDate: string;
 }> = React.memo(
-  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick, sequenceNumber }) => {
+  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick, sequenceNumber, trackingDate }) => {
     // Create a unique instance ID for this specific card to prevent cross-card interference
     const [instanceId] = useState(
       () =>
@@ -211,6 +212,16 @@ const CompactTaskCard: React.FC<{
                         ? "bg-blue-500"
                         : "bg-gray-400"
                   }`} />
+                  {/* Tracking date display */}
+                  <span className={`text-xs font-medium transition-all duration-300 ${
+                    localIsCompleted
+                      ? "text-purple-500"
+                      : isUnlocked
+                      ? "text-blue-600"
+                      : "text-gray-400"
+                  }`}>
+                    📅 {trackingDate}
+                  </span>
                 </div>
               </div>
             </div>
@@ -322,7 +333,7 @@ const PremiumHeader: React.FC<{
             {challengeSettings?.isActive && (
               <div className="bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
                 <span className="text-sm font-bold text-blue-700">
-                  Day {challengeSettings.currentDay}
+                  {challengeSettings.currentDay === 0 ? 'Trial Day' : `Day ${challengeSettings.currentDay}`}
                 </span>
               </div>
             )}
@@ -520,6 +531,33 @@ const ParticipantDashboard: React.FC = () => {
     },
     [user, updatingTask]
   );
+
+  // Get tracking date for a specific day
+  const getTrackingDateForDay = (dayNumber: number): string => {
+    if (!challengeSettings?.challengeDays || challengeSettings.challengeDays.length === 0) {
+      // Fallback: calculate tracking date as yesterday
+      const today = new Date();
+      const trackingDate = new Date(today.getTime() - (24 * 60 * 60 * 1000));
+      return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    // Find the challenge day data
+    const challengeDay = challengeSettings.challengeDays.find(day => day.dayNumber === dayNumber);
+    if (challengeDay && challengeDay.trackingDate) {
+      const trackingDate = challengeDay.trackingDate.toDate();
+      return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    // Fallback for trial day or missing data
+    if (dayNumber === 0) {
+      return 'Prep';
+    }
+    
+    // Default fallback
+    const today = new Date();
+    const trackingDate = new Date(today.getTime() - (24 * 60 * 60 * 1000));
+    return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   // Check if a task is unlocked/available
   const isTaskUnlocked = (task: Task): boolean => {
@@ -722,9 +760,11 @@ const ParticipantDashboard: React.FC = () => {
       day: 'numeric' 
     });
     
+    const currentDay = challengeSettings?.currentDay ?? 1;
+    
     return {
-      currentDay: challengeSettings?.currentDay || 1,
-      isTrialDay: (challengeSettings?.currentDay || 1) === 0,
+      currentDay: currentDay,
+      isTrialDay: currentDay === 0,
       gregorianDate: gregorianDate
     };
   };
@@ -756,22 +796,14 @@ const ParticipantDashboard: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
 
-                <div className="p-4 pt-0">
+                <div className="p-4 pt-4">
                     {/* Day Tracking Card - Only for Challenges Tab */}
                     <div className="mb-2 mt-1">
-                      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 shadow-lg relative overflow-hidden">
+                      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-2 shadow-lg relative overflow-hidden">
                         <div className="absolute inset-0 bg-white/10" />
-                        <div className="relative text-white">
-                          {/* Day Information */}
-                          <div className="bg-white/15 rounded-lg p-3 backdrop-blur-sm border border-white/20">
-                            <div className="text-center">
-                              <div className="text-sm font-bold text-white mb-1">
-                                {getCurrentDayInfo().isTrialDay ? 'Trial Day' : `Day ${getCurrentDayInfo().currentDay}`}
-                              </div>
-                              <div className="text-xs text-yellow-200 font-medium">
-                                {getCurrentDayInfo().gregorianDate}
-                              </div>
-                            </div>
+                        <div className="relative text-white text-center">
+                          <div className="text-xs font-bold text-white">
+                            Tracking : {getTrackingDateForDay(getCurrentDayInfo().currentDay)}
                           </div>
                         </div>
                       </div>
@@ -781,7 +813,9 @@ const ParticipantDashboard: React.FC = () => {
                     <div className="mb-4 pb-3 border-b border-gray-200/50">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-base font-bold text-gray-900">Yesterday's Tasks</h3>
+                          <h3 className="text-base font-bold text-gray-900">
+                            {getCurrentDayInfo().isTrialDay ? 'Trial Day Tasks' : `Day ${getCurrentDayInfo().currentDay} Tasks`}
+                          </h3>
                           <p className="text-sm text-gray-600">
                             {currentDayCompletedTasks} of {currentDayTasks.length} completed
                           </p>
@@ -859,6 +893,7 @@ const ParticipantDashboard: React.FC = () => {
                             isUpdating={isUpdating}
                             onClick={() => handleTaskClick(task)}
                             sequenceNumber={index}
+                            trackingDate={getTrackingDateForDay(task.dayNumber)}
                           />
                         );
                       })}
@@ -933,9 +968,14 @@ const ParticipantDashboard: React.FC = () => {
                         
                         <div className="relative">
                           <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-base font-bold text-gray-900">
-                              Yesterday's Progress
-                  </h3>
+                            <div>
+                              <h3 className="text-base font-bold text-gray-900">
+                                Today's Progress
+                              </h3>
+                              <p className="text-xs text-gray-500">
+                                {getCurrentDayInfo().isTrialDay ? 'Trial Day' : `Day ${getCurrentDayInfo().currentDay}`} • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </p>
+                            </div>
                             <div className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-200/50">
                               <span className="text-xs font-bold text-blue-700">
                                 {challengeSettings?.currentDay === 0 ? 'Trial' : `Day ${challengeSettings?.currentDay}`}

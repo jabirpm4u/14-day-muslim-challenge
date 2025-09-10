@@ -1,0 +1,1060 @@
+{
+  "tasks": [
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 0,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 0
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 0,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 0
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 0,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 0
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 0,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 0
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 0,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 0
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 1
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 1
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 1
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 1
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 1
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 2
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 2
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 2
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 2
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 2
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 3
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 3
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 3
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 3
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 3
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 4
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 4
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 4
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 4
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 4
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 5
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 5
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 5
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 5
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 5
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 6
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 6
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 6
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 6
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 6
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 7
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 7
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 7
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 7
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 7
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 8
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 8
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 8
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 8
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 8
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 9
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 9
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 9
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 9
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 9
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 10
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 10
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 10
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 10
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 10
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 11
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 11
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 11
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 11
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 11
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 12
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 12
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 12
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 12
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 12
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 13
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 13
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 13
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 13
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 13
+    },
+    {
+      "title": "Greet Muslims",
+      "description": "Greet at least 10 Muslims today with 'As-salamu alaykum' and respond fully with 'Wa alaykum as-salam wa rahmatullahi wa barakatuh'.",
+      "points": 10,
+      "category": "social",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Smile while greeting, it increases barakah.",
+        "Initiate the salam first for extra reward."
+      ],
+      "isActive": true,
+      "dayNumber": 14
+    },
+    {
+      "title": "Pray Fajr in Jama'ah",
+      "description": "Pray Fajr Salah in congregation at the mosque today to gain extra rewards and blessings.",
+      "points": 50,
+      "category": "worship",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Sleep early to wake up fresh for Fajr.",
+        "Make wudhu before sleeping to make waking up easier."
+      ],
+      "isActive": true,
+      "dayNumber": 14
+    },
+    {
+      "title": "Share Islamic Knowledge",
+      "description": "Share a Hadith, Qur’an ayah, vazhivilakk, or a 1-minute Islamic talk with at least one person today.",
+      "points": 10,
+      "category": "knowledge",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Keep it short and relevant.",
+        "Send it via WhatsApp or social media if you can't meet in person."
+      ],
+      "isActive": true,
+      "dayNumber": 14
+    },
+    {
+      "title": "Use Islamic Phrases",
+      "description": "Use Islamic phrases openly such as 'JazakAllahu Khair', 'Insha’Allah', 'MashAllah', and 'SubhanAllah' at least 5 times today.",
+      "points": 10,
+      "category": "identity",
+      "difficulty": "easy",
+      "estimatedTime": 1440,
+      "tips": [
+        "Use them naturally in daily conversations.",
+        "Encourage others to use them too."
+      ],
+      "isActive": true,
+      "dayNumber": 14
+    },
+    {
+      "title": "Maintain Visible Islamic Identity",
+      "description": "Show your Islamic identity proudly: use fragrance (itr) for men, wear modest clothing, keep beard/hijab, and maintain dignity.",
+      "points": 20,
+      "category": "identity",
+      "difficulty": "medium",
+      "estimatedTime": 1440,
+      "tips": [
+        "Dress modestly according to Sunnah.",
+        "Be consistent in maintaining identity daily."
+      ],
+      "isActive": true,
+      "dayNumber": 14
+    }
+  ],
+  "importMetadata": {
+    "version": "1.0",
+    "createdDate": "2025-09-09",
+    "description": "14-day Proud Muslim Challenge Task Import File",
+    "totalTasks": 70
+  }
+}

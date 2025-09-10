@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   getChallengeSettings, 
   updateChallengeSettings,
   startChallenge,
   stopChallenge,
+  pauseChallenge,
+  resumeChallenge,
   advanceToNextDay,
   getAllTasks,
   forceReloadTasks,
@@ -52,6 +54,9 @@ const AdminSettings: React.FC = () => {
   const [showPreview, setShowPreview] = useState<string | null>(null);
   const [bulkManagerOpen, setBulkManagerOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  
+  // Ref for schedule container to enable auto-scroll
+  const scheduleContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -124,7 +129,20 @@ const AdminSettings: React.FC = () => {
   };
 
   const handleStopChallenge = async () => {
-    if (!confirm('Are you sure you want to stop the challenge? This will deactivate all tasks.')) {
+    // Double confirmation for stopping challenge
+    const firstConfirm = confirm(
+      '⚠️ FIRST CONFIRMATION\n\nAre you sure you want to STOP the challenge?\n\nThis will:\n- Permanently deactivate ALL tasks\n- End the current challenge\n- Cannot be undone\n\nClick OK to proceed to second confirmation.'
+    );
+    
+    if (!firstConfirm) {
+      return;
+    }
+    
+    const secondConfirm = confirm(
+      '🛑 FINAL CONFIRMATION\n\nThis is your FINAL warning!\n\nStopping the challenge will:\n- End the challenge for ALL participants\n- Deactivate all tasks immediately\n- Require starting a new challenge to continue\n\nType "STOP CHALLENGE" in your mind and click OK to confirm, or Cancel to abort.'
+    );
+    
+    if (!secondConfirm) {
       return;
     }
     
@@ -132,28 +150,79 @@ const AdminSettings: React.FC = () => {
       setSaving(true);
       await stopChallenge();
       await loadData();
-      alert('Challenge stopped successfully!');
+      alert('✅ Challenge stopped successfully!');
     } catch (error) {
       console.error('Error stopping challenge:', error);
-      alert('Error stopping challenge. Please try again.');
+      alert('❌ Error stopping challenge. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePauseChallenge = async () => {
+    if (!confirm('Are you sure you want to pause the challenge? This will temporarily deactivate all tasks.')) {
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      await pauseChallenge();
+      await loadData();
+      alert('Challenge paused successfully!');
+    } catch (error) {
+      console.error('Error pausing challenge:', error);
+      alert('Error pausing challenge. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResumeChallenge = async () => {
+    if (!confirm('Are you sure you want to resume the challenge? This will recalculate remaining days and reactivate tasks.')) {
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      await resumeChallenge();
+      await loadData();
+      alert('Challenge resumed successfully!');
+    } catch (error) {
+      console.error('Error resuming challenge:', error);
+      alert('Error resuming challenge. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleAdvanceDay = async () => {
-    if (!settings || !confirm('Are you sure you want to advance to the next day?')) {
+    if (!settings || !confirm('ℹ️ Are you sure you want to advance to the next day?\n\nThis will:\n- Move to the next challenge day\n- Activate new tasks for participants\n- Deactivate current day tasks')) {
       return;
     }
     
     try {
       setSaving(true);
+      const nextDay = (settings.currentDay || 0) + 1;
       await advanceToNextDay(settings.currentDay);
       await loadData();
-      alert(`Advanced to Day ${settings.currentDay + 1}!`);
+      
+      // Auto-scroll to the new current day in schedule
+      setTimeout(() => {
+        if (scheduleContainerRef.current) {
+          const dayElement = scheduleContainerRef.current.querySelector(`[data-day="${nextDay}"]`);
+          if (dayElement) {
+            dayElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center'
+            });
+          }
+        }
+      }, 500); // Delay to allow data reload
+      
+      alert(`✅ Successfully advanced to Day ${nextDay}!`);
     } catch (error) {
       console.error('Error advancing day:', error);
-      alert('Error advancing day. Please try again.');
+      alert('❌ Error advancing day. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -290,8 +359,19 @@ const AdminSettings: React.FC = () => {
             <div className="bg-islamic-light rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600">Challenge Status:</span>
-                <span className={`font-medium ${settings?.isActive ? 'text-blue-600' : 'text-red-600'}`}>
-                  {settings?.isActive ? 'Active' : 'Inactive'}
+                <span className={`font-medium ${
+                  settings?.isActive && !settings?.isPaused
+                    ? 'text-blue-600'
+                    : settings?.isPaused
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }`}>
+                  {settings?.isActive
+                    ? settings?.isPaused
+                      ? 'Paused'
+                      : 'Active'
+                    : 'Inactive'
+                  }
                 </span>
               </div>
               <div className="flex items-center justify-between mb-2">
@@ -300,6 +380,45 @@ const AdminSettings: React.FC = () => {
                   Day {settings?.currentDay || 0} {settings?.currentDay === 0 ? '(Trial)' : ''}
                 </span>
               </div>
+              {settings?.challengeDays && settings.challengeDays.length > 0 && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-2 flex items-center justify-between">
+                    <span>Challenge Schedule:</span>
+                    <span className="text-gray-400">({settings.challengeDays.length} days total)</span>
+                  </div>
+                  <div 
+                    ref={scheduleContainerRef}
+                    className="text-xs space-y-1 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded"
+                  >
+                    {settings.challengeDays.map(day => {
+                      const scheduledDate = day.scheduledDate?.toDate?.();
+                      const trackingDate = day.trackingDate?.toDate?.();
+                      const isCurrentDay = day.dayNumber === settings.currentDay;
+                      return (
+                        <div 
+                          key={day.dayNumber} 
+                          data-day={day.dayNumber}
+                          className={`flex justify-between p-2 rounded transition-all duration-200 ${
+                            isCurrentDay 
+                              ? 'bg-blue-100 border border-blue-300 font-bold text-blue-800 shadow-sm' 
+                              : day.isActive 
+                              ? 'bg-green-50 text-green-700' 
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className={isCurrentDay ? 'font-bold' : ''}>
+                            Day {day.dayNumber}{day.dayNumber === 0 ? ' (Trial)' : ''}: {scheduledDate?.toLocaleDateString()}
+                            {isCurrentDay && ' ⬅️ CURRENT'}
+                          </span>
+                          <span className="text-gray-500 text-xs">
+                            (Tracks: {trackingDate?.toLocaleDateString()})
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Participants:</span>
                 <span className="font-medium text-islamic-dark">
@@ -323,6 +442,30 @@ const AdminSettings: React.FC = () => {
                 </button>
               ) : (
                 <>
+                  {/* Pause/Resume Button */}
+                  {!settings?.isPaused ? (
+                    <button
+                      onClick={handlePauseChallenge}
+                      disabled={saving}
+                      className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg 
+                               flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      <Pause className="w-4 h-4" />
+                      <span>{saving ? 'Pausing...' : 'Pause Challenge'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleResumeChallenge}
+                      disabled={saving}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg 
+                               flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>{saving ? 'Resuming...' : 'Resume Challenge'}</span>
+                    </button>
+                  )}
+                  
+                  {/* Stop Button */}
                   <button
                     onClick={handleStopChallenge}
                     disabled={saving}
@@ -333,15 +476,18 @@ const AdminSettings: React.FC = () => {
                     <span>{saving ? 'Stopping...' : 'Stop Challenge'}</span>
                   </button>
                   
-                  <button
-                    onClick={handleAdvanceDay}
-                    disabled={saving || !settings?.isActive}
-                    className="w-full bg-islamic-primary hover:bg-islamic-secondary text-white py-2 px-4 rounded-lg 
-                             flex items-center justify-center space-x-2 disabled:opacity-50"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                    <span>{saving ? 'Advancing...' : `Advance to Day ${(settings?.currentDay || 0) + 1}`}</span>
-                  </button>
+                  {/* Advance Day - Only show when not paused */}
+                  {!settings?.isPaused && (
+                    <button
+                      onClick={handleAdvanceDay}
+                      disabled={saving || !settings?.isActive || settings?.isPaused}
+                      className="w-full bg-islamic-primary hover:bg-islamic-secondary text-white py-2 px-4 rounded-lg 
+                               flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                      <SkipForward className="w-4 h-4" />
+                      <span>{saving ? 'Advancing...' : `Advance to Day ${(settings?.currentDay || 0) + 1}`}</span>
+                    </button>
+                  )}
                 </>
               )}
             </div>

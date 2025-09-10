@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   subscribeToParticipants, 
   resetParticipantProgress,
+  deleteParticipant,
   subscribeToChallengeSettings,
   ChallengeSettings,
   UserProgress 
@@ -21,7 +22,8 @@ import {
   TrendingUp,
   Settings,
   Play,
-  Pause
+  Pause,
+  Trash2
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -30,6 +32,7 @@ const AdminDashboard: React.FC = () => {
   const [challengeSettings, setChallengeSettings] = useState<ChallengeSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [resettingUser, setResettingUser] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState<'overview' | 'settings' | 'leaderboard'>('overview');
 
   useEffect(() => {
@@ -76,6 +79,50 @@ const AdminDashboard: React.FC = () => {
       alert(`❌ Reset Failed!\n\nError resetting progress for ${userName}:\n\n${errorMessage}\n\nPlease try again or check your admin permissions.`);
     } finally {
       setResettingUser(null);
+    }
+  };
+
+  const handleDeleteParticipant = async (userId: string, userName: string, userEmail: string) => {
+    // First confirmation - Basic warning
+    const firstConfirm = window.confirm(
+      `⚠️ DANGER: Delete Participant Account\n\nYou are about to PERMANENTLY DELETE:\n• Name: ${userName}\n• Email: ${userEmail}\n\n⚠️ THIS ACTION CANNOT BE UNDONE\n\nThe participant will lose:\n• All progress and completed tasks\n• All points and rank\n• Their entire account\n\nAre you absolutely sure you want to continue?`
+    );
+    
+    if (!firstConfirm) {
+      return;
+    }
+
+    // Second confirmation - Type confirmation for extra safety
+    const typeConfirmation = window.prompt(
+      `🔒 FINAL CONFIRMATION\n\nTo permanently delete ${userName}'s account, please type:\n\nDELETE ${userName.toUpperCase()}\n\n(This confirms you understand this action is irreversible)\n\nType here:`
+    );
+    
+    const expectedConfirmation = `DELETE ${userName.toUpperCase()}`;
+    
+    if (typeConfirmation !== expectedConfirmation) {
+      if (typeConfirmation !== null) { // User didn't cancel
+        alert(`❌ Confirmation failed\n\nYou typed: "${typeConfirmation}"\nExpected: "${expectedConfirmation}"\n\nDeletion cancelled for safety.`);
+      }
+      return;
+    }
+
+    try {
+      console.log(`🔒 Admin ${userRole?.name} initiating deletion for user: ${userId} (${userName})`);
+      setDeletingUser(userId);
+      
+      await deleteParticipant(userId);
+      
+      console.log(`✅ Successfully deleted participant: ${userName}`);
+      alert(`✅ Deletion Complete!\n\n${userName}'s account has been permanently deleted.\n\nAll their data has been removed from the system.`);
+      
+    } catch (error) {
+      console.error('❌ Error deleting participant:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      alert(`❌ Deletion Failed!\n\nError deleting ${userName}'s account:\n\n${errorMessage}\n\nPlease try again or check your admin permissions.`);
+    } finally {
+      setDeletingUser(null);
     }
   };
 
@@ -368,18 +415,33 @@ const AdminDashboard: React.FC = () => {
                             </td>
                             
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <button
-                                onClick={() => handleResetProgress(participant.userId, participant.name)}
-                                disabled={resettingUser === participant.userId}
-                                className="flex items-center space-x-1 px-3 py-1 bg-red-50 hover:bg-red-100 
-                                         text-red-600 rounded-lg transition-colors duration-200 text-sm
-                                         disabled:opacity-50"
-                              >
-                                <RefreshCw 
-                                  className={`w-3 h-3 ${resettingUser === participant.userId ? 'animate-spin' : ''}`} 
-                                />
-                                <span>Reset</span>
-                              </button>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleResetProgress(participant.userId, participant.name)}
+                                  disabled={resettingUser === participant.userId || deletingUser === participant.userId}
+                                  className="flex items-center space-x-1 px-3 py-1 bg-yellow-50 hover:bg-yellow-100 
+                                           text-yellow-700 rounded-lg transition-colors duration-200 text-sm
+                                           disabled:opacity-50"
+                                >
+                                  <RefreshCw 
+                                    className={`w-3 h-3 ${resettingUser === participant.userId ? 'animate-spin' : ''}`} 
+                                  />
+                                  <span>Reset</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleDeleteParticipant(participant.userId, participant.name, participant.email)}
+                                  disabled={resettingUser === participant.userId || deletingUser === participant.userId}
+                                  className="flex items-center space-x-1 px-3 py-1 bg-red-50 hover:bg-red-100 
+                                           text-red-600 rounded-lg transition-colors duration-200 text-sm
+                                           disabled:opacity-50"
+                                >
+                                  <Trash2 
+                                    className={`w-3 h-3 ${deletingUser === participant.userId ? 'animate-pulse' : ''}`} 
+                                  />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
