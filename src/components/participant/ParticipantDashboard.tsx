@@ -10,7 +10,7 @@ import {
 } from "../../firebase/firestore";
 import { UserRole } from "../../firebase/auth";
 import Leaderboard from "../ui/Leaderboard";
-import {
+import { 
   CheckCircle,
   Trophy,
   Star,
@@ -23,6 +23,7 @@ import {
   Award,
   BookOpen,
   Target,
+  CalendarDays
 } from "lucide-react";
 
 // Ultra-Compact Task Card for mobile-first design with complete isolation
@@ -204,23 +205,6 @@ const CompactTaskCard: React.FC<{
                     {localIsCompleted
                       ? `✓ +${task.points} pts`
                       : `${task.points} pts`}
-                  </span>
-                  <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                      localIsCompleted
-                        ? "bg-gradient-to-r from-purple-400 to-violet-500 shadow-sm"
-                        : isUnlocked
-                        ? "bg-blue-500"
-                        : "bg-gray-400"
-                  }`} />
-                  {/* Tracking date display */}
-                  <span className={`text-xs font-medium transition-all duration-300 ${
-                    localIsCompleted
-                      ? "text-purple-500"
-                      : isUnlocked
-                      ? "text-blue-600"
-                      : "text-gray-400"
-                  }`}>
-                    📅 {trackingDate}
                   </span>
                 </div>
               </div>
@@ -801,9 +785,10 @@ const ParticipantDashboard: React.FC = () => {
                     <div className="mb-2 mt-1">
                       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-2 shadow-lg relative overflow-hidden">
                         <div className="absolute inset-0 bg-white/10" />
-                        <div className="relative text-white text-center">
+                        <div className="relative text-white text-center flex items-center justify-center space-x-2">
+                          <CalendarDays className="w-4 h-4 text-white" />
                           <div className="text-xs font-bold text-white">
-                            Tracking : {getTrackingDateForDay(getCurrentDayInfo().currentDay)}
+                            Tracking: {getTrackingDateForDay(getCurrentDayInfo().currentDay)}
                           </div>
                         </div>
                       </div>

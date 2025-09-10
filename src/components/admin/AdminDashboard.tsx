@@ -6,11 +6,14 @@ import {
   deleteParticipant,
   subscribeToChallengeSettings,
   ChallengeSettings,
-  UserProgress 
+  UserProgress,
+  getAllTasks,
+  Task
 } from '../../firebase/firestore';
 import AdminSettings from './AdminSettings';
 import Leaderboard from '../ui/Leaderboard';
 import CountdownTimer from '../ui/CountdownTimer';
+import ParticipantProgressModal from './ParticipantProgressModal';
 import { 
   Users, 
   Trophy, 
@@ -23,7 +26,8 @@ import {
   Settings,
   Play,
   Pause,
-  Trash2
+  Trash2,
+  Eye
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -34,6 +38,9 @@ const AdminDashboard: React.FC = () => {
   const [resettingUser, setResettingUser] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState<'overview' | 'settings' | 'leaderboard'>('overview');
+  const [selectedParticipant, setSelectedParticipant] = useState<UserProgress | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     // Subscribe to participants data
@@ -46,6 +53,13 @@ const AdminDashboard: React.FC = () => {
     const unsubscribeSettings = subscribeToChallengeSettings((settings) => {
       setChallengeSettings(settings);
     });
+
+    // Load all tasks for progress display
+    const loadTasks = async () => {
+      const tasks = await getAllTasks();
+      setAllTasks(tasks);
+    };
+    loadTasks();
 
     return () => {
       unsubscribeParticipants();
@@ -126,6 +140,11 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleViewProgress = (participant: UserProgress) => {
+    setSelectedParticipant(participant);
+    setIsModalOpen(true);
+  };
+
   // Calculate statistics
   const stats = {
     totalParticipants: participants.length,
@@ -151,8 +170,6 @@ const AdminDashboard: React.FC = () => {
     return deadline;
   };
 
-
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-islamic-light to-white flex items-center justify-center">
@@ -166,6 +183,16 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-islamic-light to-white">
+      {/* Progress Modal */}
+      {selectedParticipant && (
+        <ParticipantProgressModal
+          participant={selectedParticipant}
+          tasks={allTasks}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-white shadow-lg border-b border-islamic-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -416,6 +443,15 @@ const AdminDashboard: React.FC = () => {
                             
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleViewProgress(participant)}
+                                  className="flex items-center space-x-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 
+                                           text-blue-700 rounded-lg transition-colors duration-200 text-sm"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>View</span>
+                                </button>
+                                
                                 <button
                                   onClick={() => handleResetProgress(participant.userId, participant.name)}
                                   disabled={resettingUser === participant.userId || deletingUser === participant.userId}
