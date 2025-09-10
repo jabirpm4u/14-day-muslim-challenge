@@ -8,6 +8,7 @@ import {
   Task,
   ChallengeSettings,
 } from "../../firebase/firestore";
+import { advanceToNextDay } from "../../firebase/firestore";
 import { UserRole } from "../../firebase/auth";
 import Leaderboard from "../ui/Leaderboard";
 import { 
@@ -477,6 +478,72 @@ const ParticipantDashboard: React.FC = () => {
       };
     }
   }, [user]);
+
+  // Compute expected current day based on 00:00-23:59 local day windows
+  const computeExpectedCurrentDay = useCallback((settings: ChallengeSettings, now: Date): number => {
+    // Prefer startDate/dayDuration if present
+    if (settings.startDate && settings.dayDuration) {
+      const start = settings.startDate.toDate ? settings.startDate.toDate() : new Date(settings.startDate);
+      const elapsedMs = now.getTime() - start.getTime();
+      const dayLengthMs = settings.dayDuration * 60 * 60 * 1000;
+      const passed = Math.floor(elapsedMs / dayLengthMs);
+      return Math.min(Math.max(passed, 0), 14);
+    }
+
+    // Fallback: derive from challengeDays scheduledDate (date-only compare)
+    if (settings.challengeDays && settings.challengeDays.length > 0) {
+      let maxActive = 0;
+      for (const d of settings.challengeDays) {
+        const scheduled = d.scheduledDate?.toDate ? d.scheduledDate.toDate() : new Date(d.scheduledDate);
+        if (scheduled.getTime() <= now.getTime()) {
+          maxActive = Math.max(maxActive, d.dayNumber);
+        }
+      }
+      return Math.min(Math.max(maxActive, 0), 14);
+    }
+
+    return settings.currentDay || 0;
+  }, []);
+
+  // Ensure currentDay auto-aligns at app load and on midnight rollover
+  useEffect(() => {
+    const alignDayIfNeeded = async () => {
+      if (!challengeSettings || !challengeSettings.isActive || challengeSettings.isPaused) return;
+      const now = new Date();
+      const expected = computeExpectedCurrentDay(challengeSettings, now);
+      if (expected > challengeSettings.currentDay) {
+        try {
+          // Advance stepwise to ensure task activation/deactivation logic runs
+          for (let d = challengeSettings.currentDay; d < expected; d++) {
+            await advanceToNextDay(d);
+          }
+        } catch (e) {
+          console.error("Auto-advance failed:", e);
+        }
+      }
+    };
+
+    alignDayIfNeeded();
+
+    // Schedule a check at next local midnight
+    const scheduleNextMidnight = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      return window.setTimeout(() => {
+        alignDayIfNeeded();
+      }, nextMidnight.getTime() - now.getTime());
+    };
+
+    let midnightTimer: number | null = null;
+    if (challengeSettings?.isActive && !challengeSettings?.isPaused) {
+      midnightTimer = scheduleNextMidnight();
+    }
+
+    return () => {
+      if (midnightTimer) window.clearTimeout(midnightTimer);
+    };
+  }, [challengeSettings, computeExpectedCurrentDay]);
 
   const handleTaskToggle = useCallback(
     async (

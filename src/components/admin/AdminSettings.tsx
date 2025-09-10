@@ -510,9 +510,17 @@ const AdminSettings: React.FC = () => {
                     max="168"
                     value={dayDuration}
                     onChange={(e) => setDayDuration(parseInt(e.target.value))}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-islamic-primary focus:border-transparent"
+                    disabled={settings?.isActive} // Disable when challenge is active
+                    className={`flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-islamic-primary focus:border-transparent ${
+                      settings?.isActive ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                   />
                 </div>
+                {settings?.isActive && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Day duration can only be changed when challenge is stopped or not started
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center space-x-3">
@@ -530,13 +538,20 @@ const AdminSettings: React.FC = () => {
 
               <button
                 onClick={handleSaveSettings}
-                disabled={saving}
-                className="w-full bg-islamic-primary hover:bg-islamic-secondary text-white py-2 px-4 rounded-lg 
-                         flex items-center justify-center space-x-2 disabled:opacity-50"
+                disabled={saving || settings?.isActive} // Disable when challenge is active
+                className={`w-full bg-islamic-primary hover:bg-islamic-secondary text-white py-2 px-4 rounded-lg 
+                         flex items-center justify-center space-x-2 disabled:opacity-50 ${
+                          settings?.isActive ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' : ''
+                         }`}
               >
                 <Save className="w-4 h-4" />
                 <span>{saving ? 'Saving...' : 'Save Settings'}</span>
               </button>
+              {settings?.isActive && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Settings can only be changed when challenge is stopped or not started
+                </p>
+              )}
             </div>
           </div>
         </div>
