@@ -575,8 +575,10 @@ export const deleteParticipant = async (userId: string): Promise<void> => {
     
     console.log(`✅ Successfully deleted participant: ${userData.name}`);
     
-    // Update leaderboard after deletion
+    // Update leaderboard after deletion to ensure user is removed from rankings
     console.log('🏆 Updating leaderboard after deletion...');
+    // Add a small delay to ensure deletion has propagated before updating leaderboard
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await updateLeaderboard();
     
     console.log('🎉 Deletion operation completed successfully');

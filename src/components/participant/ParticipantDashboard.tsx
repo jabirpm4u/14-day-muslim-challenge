@@ -910,7 +910,7 @@ const ParticipantDashboard: React.FC = () => {
               <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
                 
-                <div className="p-4">
+                <div className="p-4 overflow-y-auto" style={{ maxHeight: "calc(100dvh - 180px)" }}>
                   <Leaderboard className="shadow-none" maxEntries={50} />
                 </div>
               </div>
