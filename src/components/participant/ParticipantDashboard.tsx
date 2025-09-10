@@ -712,58 +712,20 @@ const ParticipantDashboard: React.FC = () => {
     ? (currentDayCompletedTasks / currentDayTasks.length) * 100 
     : 0;
 
-  // Get current Islamic date info with specific day tracking
-  const getIslamicDateInfo = () => {
+  // Get current day info
+  const getCurrentDayInfo = () => {
     const now = new Date();
-    
-    // Calculate the start and end dates for this specific challenge day
-    // Start: Two days ago's Maghrib (one day before yesterday)
-    const startDate = new Date(now);
-    startDate.setDate(now.getDate() - 2); // Two days ago for Maghrib start
-    
-    // End: Yesterday's Maghrib (one day before today)
-    const endDate = new Date(now);
-    endDate.setDate(now.getDate() - 1); // Yesterday for Maghrib end
-    
-    const startDateStr = startDate.toLocaleDateString('en-US', { 
-      month: 'short', 
+    const gregorianDate = now.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long', 
       day: 'numeric' 
     });
-    
-    const endDateStr = endDate.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    });
-    
-    // Hijri date calculation (approximate - in real app, use proper Hijri calendar)
-    // Base date: 15 Rabiʻ I awwal 1446 AH (approximate for current period)
-    const baseHijriDay = 15;
-    const baseHijriMonth = "Rabiʻ I awwal";
-    const baseHijriYear = 1446;
-    
-    // Calculate Hijri date based on challenge day
-    let hijriDay = baseHijriDay + ((challengeSettings?.currentDay || 1) - 1);
-    let hijriMonth = baseHijriMonth;
-    let hijriYear = baseHijriYear;
-    
-    // Handle month overflow (Rabiʻ I awwal has 30 days)
-    if (hijriDay > 30) {
-      hijriDay = hijriDay - 30;
-      hijriMonth = "Rabiʻ I thani";
-    }
-    
-    // Handle year overflow (simplified)
-    if (hijriMonth === "Rabiʻ I thani" && hijriDay > 30) {
-      hijriDay = hijriDay - 30;
-      hijriMonth = "Jumada al-awwal";
-    }
     
     return {
-      hijriDate: `${hijriDay} ${hijriMonth} ${hijriYear} AH`,
-      gregorianStart: startDateStr,
-      gregorianEnd: endDateStr,
       currentDay: challengeSettings?.currentDay || 1,
-      isTrialDay: (challengeSettings?.currentDay || 1) === 0
+      isTrialDay: (challengeSettings?.currentDay || 1) === 0,
+      gregorianDate: gregorianDate
     };
   };
 
@@ -795,32 +757,19 @@ const ParticipantDashboard: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
 
                 <div className="p-4 pt-0">
-                    {/* Islamic Day Tracking Card - Only for Challenges Tab */}
+                    {/* Day Tracking Card - Only for Challenges Tab */}
                     <div className="mb-2 mt-1">
                       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 shadow-lg relative overflow-hidden">
                         <div className="absolute inset-0 bg-white/10" />
                         <div className="relative text-white">
-                          {/* Header */}
-                          {/* <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-2">
-                              <CalendarDays className="w-4 h-4 text-yellow-300" />
-                              <span className="text-sm font-bold">
-                                {getIslamicDateInfo().isTrialDay ? 'Trial Day' : `Day ${getIslamicDateInfo().currentDay}`} Tracking Period
-                              </span>
-                            </div>
-                            <div className="text-xs bg-yellow-400/20 text-yellow-200 px-2 py-1 rounded-md font-medium">
-                              Islamic Day
-                            </div>
-                          </div> */}
-                          
-                          {/* Date Information */}
+                          {/* Day Information */}
                           <div className="bg-white/15 rounded-lg p-3 backdrop-blur-sm border border-white/20">
                             <div className="text-center">
-                              <div className="text-sm font-bold text-white mb-2">
-                                {getIslamicDateInfo().gregorianStart} (Maghrib) - {getIslamicDateInfo().gregorianEnd} (Maghrib)
+                              <div className="text-sm font-bold text-white mb-1">
+                                {getCurrentDayInfo().isTrialDay ? 'Trial Day' : `Day ${getCurrentDayInfo().currentDay}`}
                               </div>
                               <div className="text-xs text-yellow-200 font-medium">
-                                {getIslamicDateInfo().hijriDate}
+                                {getCurrentDayInfo().gregorianDate}
                               </div>
                             </div>
                           </div>
