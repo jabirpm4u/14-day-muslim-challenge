@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async () => {
     try {
       setLoading(true);
-      const roleData = await signInWithGoogle();
+      await signInWithGoogle();
       // The onAuthStateChange will handle setting the user and userRole
       // We don't need to set them here to avoid race conditions
     } catch (error) {
