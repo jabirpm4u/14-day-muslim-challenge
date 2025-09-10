@@ -60,6 +60,11 @@ const AppRoutes: React.FC = () => {
     return <LoadingSpinner />;
   }
 
+  // If user is authenticated but userRole is not loaded yet, show loading
+  if (user && !userRole) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <Routes>
       {/* Public Route */}
@@ -91,8 +96,8 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/" 
         element={
-          user ? (
-            <Navigate to={userRole?.role === 'admin' ? '/admin' : '/dashboard'} replace />
+          user && userRole ? (
+            <Navigate to={userRole.role === 'admin' ? '/admin' : '/dashboard'} replace />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -103,8 +108,8 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="*" 
         element={
-          user ? (
-            <Navigate to={userRole?.role === 'admin' ? '/admin' : '/dashboard'} replace />
+          user && userRole ? (
+            <Navigate to={userRole.role === 'admin' ? '/admin' : '/dashboard'} replace />
           ) : (
             <Navigate to="/login" replace />
           )

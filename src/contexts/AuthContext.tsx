@@ -47,8 +47,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (user) {
         // Get user role data
-        const roleData = await getCurrentUserRole();
-        setUserRole(roleData);
+        try {
+          const roleData = await getCurrentUserRole();
+          setUserRole(roleData);
+        } catch (error) {
+          console.error('Error getting user role:', error);
+          setUserRole(null);
+        }
       } else {
         setUserRole(null);
       }
@@ -63,13 +68,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const roleData = await signInWithGoogle();
-      setUserRole(roleData);
+      // The onAuthStateChange will handle setting the user and userRole
+      // We don't need to set them here to avoid race conditions
     } catch (error) {
       console.error('Sign in error:', error);
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
+    // Don't set loading to false here - let onAuthStateChange handle it
   };
 
   const signOut = async () => {

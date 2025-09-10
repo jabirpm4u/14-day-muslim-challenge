@@ -120,7 +120,7 @@ const CompactTaskCard: React.FC<{
     return (
       <div
         onClick={onClick}
-        className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg ${
+        className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] touch-manipulation ${
           localIsCompleted
             ? "bg-gradient-to-br from-purple-50/90 via-violet-50/80 to-indigo-50/90 border-purple-300/70 shadow-purple-200/40 ring-2 ring-purple-200/20 hover:ring-purple-300/30"
             : isUnlocked
@@ -220,7 +220,7 @@ const CompactTaskCard: React.FC<{
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 touch-manipulation ${
                   localIsUpdating
                     ? "bg-gray-400 text-white cursor-not-allowed shadow-lg"
                     : localIsCompleted
@@ -547,7 +547,7 @@ const ParticipantDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center relative overflow-hidden">
         {/* Enhanced animated background */}
         <div className="absolute inset-0">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" />
@@ -632,7 +632,7 @@ const ParticipantDashboard: React.FC = () => {
   // Challenge inactive state
   if (!challengeSettings?.isActive) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+      <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-400/10 to-orange-400/10 rounded-full blur-3xl animate-pulse" />
@@ -730,7 +730,7 @@ const ParticipantDashboard: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+    <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" />
@@ -749,7 +749,7 @@ const ParticipantDashboard: React.FC = () => {
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="pt-18 pb-20 h-screen overflow-y-auto">
+      <div className="pt-18 pb-20 min-h-[calc(100dvh-4.5rem)] overflow-y-auto">
           {currentTab === "challenges" && (
             <div className="px-3 pt-0 pb-3">
               {/* Optimized Tasks Container */}
@@ -835,7 +835,7 @@ const ParticipantDashboard: React.FC = () => {
                   ) : (
                     <div
                         className="space-y-3 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-                        style={{ maxHeight: "calc(100vh - 280px)" }}
+                        style={{ maxHeight: "calc(100dvh - 280px)" }}
                       >
                       {getCurrentDayTasks().map((task, index) => {
                         // Fix: Use task.id as the key instead of dayNumber
@@ -1011,7 +1011,7 @@ const ParticipantDashboard: React.FC = () => {
       </div>
 
       {/* Fixed Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-20">
+      <div className="fixed bottom-0 left-0 right-0 z-20 safe-area-pb">
         <NavigationFooter
           currentTab={currentTab}
           onTabChange={(tab) =>

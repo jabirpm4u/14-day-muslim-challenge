@@ -3,23 +3,24 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Star, Moon, Sparkles } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const { signIn } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { signIn, loading } = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleGoogleSignIn = async () => {
     try {
-      setLoading(true);
+      setIsSigningIn(true);
       await signIn();
+      // Don't set loading to false here - let AuthContext handle it
     } catch (error) {
       console.error('Login error:', error);
       alert('Login failed. Please try again.');
     } finally {
-      setLoading(false);
+      setIsSigningIn(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center islamic-pattern">
+    <div className="min-h-screen h-[100dvh] flex items-center justify-center islamic-pattern">
       <div className="max-w-md w-full mx-4">
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 text-center relative overflow-hidden">
@@ -70,7 +71,7 @@ const Login: React.FC = () => {
           {/* Sign In Button */}
           <button
             onClick={handleGoogleSignIn}
-            disabled={loading}
+            disabled={loading || isSigningIn}
             className="w-full bg-white border-2 border-gray-200 rounded-xl py-4 px-6 
                      flex items-center justify-center space-x-3 
                      hover:border-islamic-primary hover:shadow-lg 
@@ -83,7 +84,7 @@ const Login: React.FC = () => {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             <span className="font-semibold text-gray-700 group-hover:text-islamic-primary transition-colors">
-              {loading ? 'Signing In...' : 'Continue with Google'}
+              {(loading || isSigningIn) ? 'Signing In...' : 'Continue with Google'}
             </span>
           </button>
 
