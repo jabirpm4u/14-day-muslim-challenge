@@ -31,7 +31,8 @@ import {
   BookOpen,
   Target,
   CalendarDays,
-  Pause
+  Pause,
+  RotateCcw
 } from "lucide-react";
 
 // Ultra-Compact Task Card for mobile-first design with complete isolation
@@ -132,34 +133,34 @@ const CompactTaskCard: React.FC<{
         onClick={onClick}
         className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] touch-manipulation ${
           localIsCompleted
-            ? "bg-gradient-to-br from-purple-50/90 via-violet-50/80 to-indigo-50/90 border-purple-300/70 shadow-purple-200/40 ring-2 ring-purple-200/20 hover:ring-purple-300/30"
+            ? "bg-gradient-to-br from-indigo-50/90 via-blue-50/80 to-indigo-50/90 border-indigo-300/70 shadow-indigo-200/40 ring-2 ring-indigo-200/20 hover:ring-indigo-300/30"
             : isUnlocked
             ? "bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 border-blue-200/50 shadow-blue-100/30 hover:shadow-blue-200/50"
             : "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200/50 opacity-60"
-        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-purple-300/60 ring-4 ring-purple-200/40" : ""}`}
+        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-indigo-300/60 ring-4 ring-indigo-200/40" : ""}`}
       >
         {/* Sophisticated background pattern with layered effects */}
         <div className={`absolute inset-0 transition-all duration-500 ${
           localIsCompleted 
-            ? "bg-gradient-to-br from-purple-100/20 via-violet-100/15 to-indigo-100/20" 
+            ? "bg-gradient-to-br from-indigo-100/20 via-blue-100/15 to-indigo-100/20" 
             : "bg-gradient-to-br from-white/20 to-transparent"
         }`} />
         
         {/* Success shimmer effect for completed tasks */}
         {localIsCompleted && (
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-200/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-200/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
         )}
         
         {/* Subtle success glow for completed tasks */}
         {localIsCompleted && (
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-400/20 via-violet-400/30 to-indigo-400/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400/20 via-indigo-400/30 to-blue-400/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         )}
         
         {/* Success pattern overlay for completed tasks */}
         {localIsCompleted && (
           <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-2 right-2 w-8 h-8 border-2 border-purple-400 rounded-full" />
-            <div className="absolute bottom-2 left-2 w-6 h-6 border-2 border-violet-400 rounded-full" />
+            <div className="absolute top-2 right-2 w-8 h-8 border-2 border-indigo-400 rounded-full" />
+            <div className="absolute bottom-2 left-2 w-6 h-6 border-2 border-blue-400 rounded-full" />
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 border-2 border-indigo-400 rounded-full" />
           </div>
         )}
@@ -170,20 +171,22 @@ const CompactTaskCard: React.FC<{
             <div className="flex items-center space-x-2 flex-1 min-w-0">
               {/* Compact day icon with sophisticated treatment */}
               <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg transition-all duration-300 ${
+                className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-white text-[11px] md:text-xs font-bold shadow-lg transition-all duration-300 ${
                   task.dayNumber === 0
                     ? "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-blue-400 to-indigo-500 ring-2 ring-blue-200/60 shadow-blue-200/50 group-hover:shadow-blue-300/60 group-hover:ring-blue-300/80 group-hover:scale-105"
+                    ? "bg-gradient-to-br from-indigo-500 to-purple-600 ring-2 ring-indigo-200/70 shadow-indigo-200/50 group-hover:shadow-indigo-300/60 group-hover:ring-indigo-300/80 group-hover:scale-105"
                     : isUnlocked
-                    ? "bg-gradient-to-br from-blue-500 to-indigo-600"
+                    ? "bg-gradient-to-br from-indigo-500 to-violet-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
                 }`}
               >
                 {!isUnlocked ? (
                   <Lock className="w-3 h-3" />
+                ) : localIsCompleted ? (
+                  <CheckCircle className="w-4 h-4 text-white drop-shadow-sm" />
                 ) : (
-                  <span className="text-xs font-bold">{getSequenceNumber(sequenceNumber)}</span>
+                  <span className="text-xs font-bold text-white">{getSequenceNumber(sequenceNumber)}</span>
                 )}
               </div>
 
@@ -192,7 +195,7 @@ const CompactTaskCard: React.FC<{
                 <h3
                   className={`font-bold text-sm leading-tight truncate transition-colors duration-300 ${
                     localIsCompleted
-                      ? "text-purple-800 group-hover:text-purple-900"
+                      ? "text-indigo-800 group-hover:text-indigo-900"
                       : isUnlocked
                       ? "text-gray-900"
                       : "text-gray-500"
@@ -206,7 +209,7 @@ const CompactTaskCard: React.FC<{
                   <span
                     className={`text-xs font-semibold transition-all duration-300 ${
                       localIsCompleted 
-                        ? "text-purple-600 bg-purple-100/60 px-2 py-0.5 rounded-full group-hover:bg-purple-200/80 group-hover:text-purple-700" 
+                        ? "text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-full group-hover:bg-indigo-200/80 group-hover:text-indigo-700" 
                         : "text-amber-600"
                     }`}
                   >
@@ -223,20 +226,22 @@ const CompactTaskCard: React.FC<{
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 touch-manipulation ${
+                aria-label={localIsCompleted ? "Undo completion" : "Mark task complete"}
+                title={localIsCompleted ? "Undo completion" : "Mark complete"}
+                className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all duration-300 touch-manipulation focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   localIsUpdating
                     ? "bg-gray-400 text-white cursor-not-allowed shadow-lg"
                     : localIsCompleted
-                    ? "bg-transparent text-purple-600 hover:scale-105"
-                    : "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-blue-200/50 shadow-lg"
+                    ? "bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:shadow-purple-200/60 shadow-lg focus:ring-purple-400"
+                    : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-200/60 shadow-lg focus:ring-blue-400"
                 } ${localJustCompleted ? "animate-bounce" : ""}`}
               >
                 {localIsUpdating ? (
                   <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" />
                 ) : (
-                  <Target className="w-3 h-3" />
+                  <Target className="w-4 h-4" />
                 )}
               </button>
             )}
