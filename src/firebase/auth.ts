@@ -25,45 +25,49 @@ export interface UserRole {
   updatedAt?: any; // New: Last update timestamp
 }
 
+// Ensure the authenticated user has a Firestore user document
+export const ensureUserDocument = async (user: User): Promise<UserRole> => {
+  const userDocRef = doc(db, 'users', user.uid);
+  const userDoc = await getDoc(userDocRef);
+  if (!userDoc.exists()) {
+    // Create minimal participant profile so rules pass get() checks
+    const initialProgress: Record<string, boolean> = {};
+    const initialPoints: Record<string, number> = {};
+    for (let i = 0; i <= 14; i++) {
+      initialProgress[`day${i}`] = false;
+      initialPoints[`day${i}`] = 0;
+    }
+    const userRole: UserRole = {
+      uid: user.uid,
+      name: user.displayName || '',
+      email: user.email || '',
+      role: 'participant',
+      joinedAt: serverTimestamp(),
+      progress: initialProgress,
+      points: initialPoints,
+      totalPoints: 0,
+      rank: 0,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(userDocRef, userRole);
+    return userRole;
+  }
+  // If exists but missing role, set default without clobbering
+  const data = userDoc.data() as Partial<UserRole>;
+  if (!data.role) {
+    await setDoc(userDocRef, { role: 'participant', updatedAt: serverTimestamp() }, { merge: true });
+  }
+  return { ...(userDoc.data() as UserRole) };
+};
+
 // Sign in with Google
 export const signInWithGoogle = async (): Promise<UserRole | null> => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
     
-    // Check if user document exists
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    let userRole: UserRole;
-    
-    if (!userDoc.exists()) {
-      // Create new user document (default to participant)
-      const initialProgress: Record<string, boolean> = {};
-      const initialPoints: Record<string, number> = {};
-      for (let i = 0; i <= 14; i++) {
-        initialProgress[`day${i}`] = false;
-        initialPoints[`day${i}`] = 0;
-      }
-      
-      userRole = {
-        uid: user.uid,
-        name: user.displayName || '',
-        email: user.email || '',
-        role: 'participant', // Default role
-        joinedAt: serverTimestamp(),
-        progress: initialProgress,
-        points: initialPoints,
-        totalPoints: 0,
-        rank: 0,
-        updatedAt: serverTimestamp()
-      };
-      
-      await setDoc(userDocRef, userRole);
-    } else {
-      userRole = userDoc.data() as UserRole;
-    }
-    
+    // Ensure user document exists and has role
+    const userRole = await ensureUserDocument(user);
     return userRole;
   } catch (error) {
     console.error('Error signing in with Google:', error);
@@ -92,14 +96,8 @@ export const getCurrentUserRole = async (): Promise<UserRole | null> => {
   if (!user) return null;
   
   try {
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (userDoc.exists()) {
-      return userDoc.data() as UserRole;
-    }
-    
-    return null;
+    // Ensure existence then return
+    return await ensureUserDocument(user);
   } catch (error) {
     console.error('Error getting user role:', error);
     return null;

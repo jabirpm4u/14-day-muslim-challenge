@@ -4,6 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const LoadingSpinner: React.FC = () => {
   const { isRefreshing } = useAuth();
+  const [seconds, setSeconds] = React.useState(0);
+  React.useEffect(() => {
+    const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-islamic-light to-white islamic-pattern">
       <div className="text-center">
@@ -25,6 +30,9 @@ const LoadingSpinner: React.FC = () => {
           <h3 className="text-lg font-semibold text-islamic-dark">
             {isRefreshing ? 'Refreshing for better experience...' : 'Loading your Islamic journey...'}
           </h3>
+          {seconds > 7 && (
+            <p className="text-xs text-islamic-secondary">If this takes too long, please refresh or try login again.</p>
+          )}
           <p className="text-sm text-islamic-primary">
             بِسْمِ اللّهِ الرَّحْمـَنِ الرَّحِيم
           </p>

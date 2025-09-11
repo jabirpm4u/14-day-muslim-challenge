@@ -1239,7 +1239,14 @@ const ParticipantDashboard: React.FC = () => {
                         className="space-y-3 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                         style={{ maxHeight: "calc(100dvh - 280px)" }}
                       >
-                      {getCurrentDayTasks().map((task, index) => {
+                      {getCurrentDayTasks()
+                        .sort((a, b) => {
+                          const ai = (a as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
+                          const bi = (b as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
+                          if (ai !== bi) return ai - bi;
+                          return a.title.localeCompare(b.title);
+                        })
+                        .map((task, index) => {
                         // Fix: Use task.id as the key instead of dayNumber
                         const taskKey = task.id;
                         const isCompleted = userProgress?.progress?.[taskKey] === true;

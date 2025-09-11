@@ -46,6 +46,9 @@ export interface Task {
   difficulty: 'easy' | 'medium' | 'hard';
   estimatedTime: string; // e.g., "5 minutes", "30 minutes"
   tips?: string[]; // Optional tips for completing the task
+  // Order support: preserve original JSON order across all tasks
+  // Lower values appear earlier; used for per-day ordering in UI
+  sortIndex?: number;
 }
 
 export interface ChallengeDay {
@@ -342,8 +345,16 @@ export const initializeDefaultTasks = async (): Promise<void> => {
 // Get tasks filtered by challenge state and user access
 export const getAvailableTasks = async (challengeSettings?: ChallengeSettings | null): Promise<Task[]> => {
   try {
-    const tasksQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
-    const snapshot = await getDocs(tasksQuery);
+    let snapshot;
+    try {
+      // Preferred: order by dayNumber then sortIndex (preserve JSON order)
+      const preferredQuery = query(collection(db, 'tasks'), orderBy('dayNumber'), orderBy('sortIndex'));
+      snapshot = await getDocs(preferredQuery);
+    } catch (err) {
+      console.warn('Compound ordering failed or index missing; falling back to single-field order. Error:', err);
+      const fallbackQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
+      snapshot = await getDocs(fallbackQuery);
+    }
 
     if (snapshot.empty) {
       await initializeDefaultTasks();
@@ -488,6 +499,28 @@ export const subscribeToParticipants = (callback: (participants: UserProgress[])
       callback([]);
     }
   });
+};
+
+// Danger: Delete all participant users (role === 'participant')
+export const deleteAllParticipants = async (): Promise<number> => {
+  try {
+    const usersQuery = query(collection(db, 'users'), where('role', '==', 'participant'));
+    const snapshot = await getDocs(usersQuery);
+    if (snapshot.empty) return 0;
+    const batchSize = 10;
+    let deleted = 0;
+    for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const slice = snapshot.docs.slice(i, i + batchSize);
+      slice.forEach(docRef => batch.delete(docRef.ref));
+      await batch.commit();
+      deleted += slice.length;
+    }
+    return deleted;
+  } catch (error) {
+    console.error('Error deleting all participants:', error);
+    throw error;
+  }
 };
 
 // Update user progress with points
@@ -1645,7 +1678,7 @@ export const subscribeToUserProgress = (
 
 // Bulk import tasks from JSON
 export const bulkImportTasks = async (tasksData: {
-  tasks: Omit<Task, 'id'>[];
+  tasks: Omit<Task, 'id' | 'sortIndex'>[];
   importMetadata?: any;
 }, options: {
   skipExisting?: boolean;
@@ -1695,8 +1728,9 @@ export const bulkImportTasks = async (tasksData: {
             }
           }
 
-          // Create the task
-          await createOrUpdateTask(taskData);
+          // Create the task with a global sortIndex to preserve JSON order across all days
+          const sortIndex = tasks.indexOf(taskData);
+          await createOrUpdateTask({ ...taskData, sortIndex });
           results.success++;
           console.log(`✅ Imported task for day ${taskData.dayNumber}: ${taskData.title}`);
         } catch (error) {

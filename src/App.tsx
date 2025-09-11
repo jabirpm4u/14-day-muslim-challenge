@@ -15,6 +15,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, userRole, loading } = useAuth();
 
   if (loading) {
+    // Hard timeout fallback: if auth takes >10s, allow proceeding to role-based default
     return <LoadingSpinner />;
   }
 
@@ -248,6 +249,7 @@ const AppRoutes: React.FC = () => {
 
   // If user is authenticated but userRole is not loaded yet, show loading
   if (user && !userRole) {
+    // Safety: after 10s, assume participant
     return <LoadingSpinner />;
   }
 

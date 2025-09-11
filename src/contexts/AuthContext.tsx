@@ -77,10 +77,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!userRole) {
           try {
             const roleData = await getCurrentUserRole();
-            setUserRole(roleData);
+            if (roleData) {
+              setUserRole(roleData);
+            } else {
+              // Fallback: assume participant if role doc missing
+              setUserRole({
+                uid: user.uid,
+                name: user.displayName || 'User',
+                email: user.email || '',
+                role: 'participant',
+                joinedAt: null,
+                progress: {},
+                points: {},
+                totalPoints: 0,
+                rank: 0,
+                updatedAt: null
+              } as unknown as UserRole);
+            }
           } catch (error) {
             console.error('Error getting user role:', error);
-            setUserRole(null);
+            // Fallback on error as participant to prevent lock on loading screen
+            if (user) {
+              setUserRole({
+                uid: user.uid,
+                name: user.displayName || 'User',
+                email: user.email || '',
+                role: 'participant',
+                joinedAt: null,
+                progress: {},
+                points: {},
+                totalPoints: 0,
+                rank: 0,
+                updatedAt: null
+              } as unknown as UserRole);
+            } else {
+              setUserRole(null);
+            }
           }
         }
       } else {
