@@ -11,13 +11,13 @@ import {
   ChallengeSettings,
   UserProgress,
   checkAndStartChallenge,
-  calculateActualAvailableTasks
+  calculateActualAvailableTasks,
 } from "../../firebase/firestore";
 import { UserRole } from "../../firebase/auth";
 import Leaderboard from "../ui/Leaderboard";
 import PreChallengeCountdown from "../ui/PreChallengeCountdown";
 import ChallengeCompletion from "../ui/ChallengeCompletion";
-import { 
+import {
   CheckCircle,
   Trophy,
   Star,
@@ -32,7 +32,7 @@ import {
   Target,
   CalendarDays,
   Pause,
-  RotateCcw
+  RotateCcw,
 } from "lucide-react";
 
 // Ultra-Compact Task Card for mobile-first design with complete isolation
@@ -51,7 +51,15 @@ const CompactTaskCard: React.FC<{
   sequenceNumber: number;
   trackingDate: string;
 }> = React.memo(
-  ({ task, isCompleted, isUnlocked, onToggle, isUpdating, onClick, sequenceNumber }) => {
+  ({
+    task,
+    isCompleted,
+    isUnlocked,
+    onToggle,
+    isUpdating,
+    onClick,
+    sequenceNumber,
+  }) => {
     // Create a unique instance ID for this specific card to prevent cross-card interference
     const [instanceId] = useState(
       () =>
@@ -105,7 +113,7 @@ const CompactTaskCard: React.FC<{
         }
 
         // Call parent handler
-        
+
         onToggle(
           task.id,
           task.id, // Use task.id as the key instead of dayNumber
@@ -137,25 +145,31 @@ const CompactTaskCard: React.FC<{
             : isUnlocked
             ? "bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 border-blue-200/50 shadow-blue-100/30 hover:shadow-blue-200/50"
             : "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200/50 opacity-60"
-        } ${localJustCompleted ? "animate-pulse shadow-2xl shadow-indigo-300/60 ring-4 ring-indigo-200/40" : ""}`}
+        } ${
+          localJustCompleted
+            ? "animate-pulse shadow-2xl shadow-indigo-300/60 ring-4 ring-indigo-200/40"
+            : ""
+        }`}
       >
         {/* Sophisticated background pattern with layered effects */}
-        <div className={`absolute inset-0 transition-all duration-500 ${
-          localIsCompleted 
-            ? "bg-gradient-to-br from-indigo-100/20 via-blue-100/15 to-indigo-100/20" 
-            : "bg-gradient-to-br from-white/20 to-transparent"
-        }`} />
-        
+        <div
+          className={`absolute inset-0 transition-all duration-500 ${
+            localIsCompleted
+              ? "bg-gradient-to-br from-indigo-100/20 via-blue-100/15 to-indigo-100/20"
+              : "bg-gradient-to-br from-white/20 to-transparent"
+          }`}
+        />
+
         {/* Success shimmer effect for completed tasks */}
         {localIsCompleted && (
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-200/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
         )}
-        
+
         {/* Subtle success glow for completed tasks */}
         {localIsCompleted && (
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400/20 via-indigo-400/30 to-blue-400/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         )}
-        
+
         {/* Success pattern overlay for completed tasks */}
         {localIsCompleted && (
           <div className="absolute inset-0 opacity-5">
@@ -164,7 +178,7 @@ const CompactTaskCard: React.FC<{
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 border-2 border-indigo-400 rounded-full" />
           </div>
         )}
-        
+
         <div className="p-3 relative">
           <div className="flex items-center justify-between">
             {/* Compact left side */}
@@ -175,7 +189,7 @@ const CompactTaskCard: React.FC<{
                   task.dayNumber === 0
                     ? "bg-gradient-to-br from-purple-500 to-indigo-600"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-indigo-500 to-purple-600 ring-2 ring-indigo-200/70 shadow-indigo-200/50 group-hover:shadow-indigo-300/60 group-hover:ring-indigo-300/80 group-hover:scale-105"
+                    ? "bg-gradient-to-br from-emerald-100 to-green-200 ring-2 ring-emerald-300/50 shadow-emerald-200/40 group-hover:shadow-emerald-300/60 group-hover:ring-emerald-400/60 group-hover:scale-105"
                     : isUnlocked
                     ? "bg-gradient-to-br from-indigo-500 to-violet-600"
                     : "bg-gradient-to-br from-gray-400 to-slate-500"
@@ -184,9 +198,11 @@ const CompactTaskCard: React.FC<{
                 {!isUnlocked ? (
                   <Lock className="w-3 h-3" />
                 ) : localIsCompleted ? (
-                  <CheckCircle className="w-4 h-4 text-white drop-shadow-sm" />
+                  <CheckCircle className="w-4 h-4 text-blue-600 drop-shadow-sm" />
                 ) : (
-                  <span className="text-xs font-bold text-white">{getSequenceNumber(sequenceNumber)}</span>
+                  <span className="text-xs font-bold text-white">
+                    {getSequenceNumber(sequenceNumber)}
+                  </span>
                 )}
               </div>
 
@@ -208,8 +224,8 @@ const CompactTaskCard: React.FC<{
                 <div className="flex items-center space-x-2 mt-0.5">
                   <span
                     className={`text-xs font-semibold transition-all duration-300 ${
-                      localIsCompleted 
-                        ? "text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-full group-hover:bg-indigo-200/80 group-hover:text-indigo-700" 
+                      localIsCompleted
+                        ? "text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-full group-hover:bg-indigo-200/80 group-hover:text-indigo-700"
                         : "text-amber-600"
                     }`}
                   >
@@ -226,13 +242,15 @@ const CompactTaskCard: React.FC<{
               <button
                 onClick={handleToggleClick}
                 disabled={localIsUpdating}
-                aria-label={localIsCompleted ? "Undo completion" : "Mark task complete"}
+                aria-label={
+                  localIsCompleted ? "Undo completion" : "Mark task complete"
+                }
                 title={localIsCompleted ? "Undo completion" : "Mark complete"}
                 className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-all duration-300 touch-manipulation focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                   localIsUpdating
                     ? "bg-gray-400 text-white cursor-not-allowed shadow-lg"
                     : localIsCompleted
-                    ? "bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:shadow-purple-200/60 shadow-lg focus:ring-purple-400"
+                    ? "bg-gradient-to-br from-emerald-100 to-green-200 text-blue-600 hover:shadow-emerald-200/60 shadow-lg focus:ring-emerald-400 hover:from-emerald-200 hover:to-green-300"
                     : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:shadow-blue-200/60 shadow-lg focus:ring-blue-400"
                 } ${localJustCompleted ? "animate-bounce" : ""}`}
               >
@@ -262,7 +280,12 @@ const CompactTaskCard: React.FC<{
     const unlockedChanged = prevProps.isUnlocked !== nextProps.isUnlocked;
 
     // Only re-render if something actually changed for this specific card
-    return !(taskChanged || completedChanged || updatingChanged || unlockedChanged);
+    return !(
+      taskChanged ||
+      completedChanged ||
+      updatingChanged ||
+      unlockedChanged
+    );
   }
 );
 
@@ -272,14 +295,7 @@ const PremiumHeader: React.FC<{
   totalPoints: number;
   challengeSettings: ChallengeSettings | null;
   onSignOut: () => void;
-}> = ({ 
-  currentTab, 
-  totalPoints, 
-  challengeSettings, 
-  onSignOut 
-}) => {
-
-
+}> = ({ currentTab, totalPoints, challengeSettings, onSignOut }) => {
   const getTabTitle = () => {
     switch (currentTab) {
       case "challenges":
@@ -325,12 +341,17 @@ const PremiumHeader: React.FC<{
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200/50">
               <Star className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-bold text-amber-700">{totalPoints}</span>
+              <span className="text-sm font-bold text-amber-700">
+                {totalPoints}
+              </span>
             </div>
             {challengeSettings?.isActive && (
               <div className="bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
                 <span className="text-sm font-bold text-blue-700">
-                  {challengeSettings.currentDay === 0 && challengeSettings.trialEnabled ? 'Trial Day' : `Day ${challengeSettings.currentDay}`}
+                  {challengeSettings.currentDay === 0 &&
+                  challengeSettings.trialEnabled
+                    ? "Trial Day"
+                    : `Day ${challengeSettings.currentDay}`}
                 </span>
               </div>
             )}
@@ -343,7 +364,6 @@ const PremiumHeader: React.FC<{
           </div>
         </div>
       </div>
-
     </div>
   );
 };
@@ -401,11 +421,11 @@ const NavigationFooter: React.FC<{
                       />
                     )}
 
-                      <IconComponent
+                    <IconComponent
                       className={`w-5 h-5 transition-all duration-200 relative z-10 ${
-                          isActive ? "text-white" : "text-gray-400"
-                        }`}
-                      />
+                        isActive ? "text-white" : "text-gray-400"
+                      }`}
+                    />
 
                     <span
                       className={`text-xs font-medium mt-0.5 transition-all duration-200 relative z-10 ${
@@ -452,24 +472,33 @@ const ParticipantDashboard: React.FC = () => {
   // Check if challenge should start immediately when participant dashboard loads
   useEffect(() => {
     const checkAndStart = async () => {
-      if (challengeSettings && !challengeSettings.isActive && challengeSettings.scheduledStartDate) {
+      if (
+        challengeSettings &&
+        !challengeSettings.isActive &&
+        challengeSettings.scheduledStartDate
+      ) {
         const now = new Date();
         const scheduledStart = challengeSettings.scheduledStartDate.toDate();
-        
+
         // If scheduled time has passed, start the challenge
         if (now >= scheduledStart) {
-          console.log('🚀 Participant Dashboard: Scheduled start time has passed, starting challenge...');
+          console.log(
+            "🚀 Participant Dashboard: Scheduled start time has passed, starting challenge..."
+          );
           try {
             await checkAndStartChallenge();
             // Refresh the page to show the updated state
             window.location.reload();
           } catch (error) {
-            console.error('Error starting challenge from participant dashboard:', error);
+            console.error(
+              "Error starting challenge from participant dashboard:",
+              error
+            );
           }
         }
       }
     };
-    
+
     checkAndStart();
   }, [challengeSettings]);
 
@@ -496,7 +525,7 @@ const ParticipantDashboard: React.FC = () => {
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-      const pad = (n: number) => n.toString().padStart(2, '0');
+      const pad = (n: number) => n.toString().padStart(2, "0");
       return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     };
 
@@ -574,35 +603,47 @@ const ParticipantDashboard: React.FC = () => {
   }, [user]);
 
   // Compute expected current day based on 00:00-23:59 local day windows
-  const computeExpectedCurrentDay = useCallback((settings: ChallengeSettings, now: Date): number => {
-    // Prefer startDate/dayDuration if present
-    if (settings.startDate && settings.dayDuration) {
-      const start = settings.startDate.toDate ? settings.startDate.toDate() : new Date(settings.startDate);
-      const elapsedMs = now.getTime() - start.getTime();
-      const dayLengthMs = settings.dayDuration * 60 * 60 * 1000;
-      const passed = Math.floor(elapsedMs / dayLengthMs);
-      return Math.min(Math.max(passed, 0), 14);
-    }
-
-    // Fallback: derive from challengeDays scheduledDate (date-only compare)
-    if (settings.challengeDays && settings.challengeDays.length > 0) {
-      let maxActive = 0;
-      for (const d of settings.challengeDays) {
-        const scheduled = d.scheduledDate?.toDate ? d.scheduledDate.toDate() : new Date(d.scheduledDate);
-        if (scheduled.getTime() <= now.getTime()) {
-          maxActive = Math.max(maxActive, d.dayNumber);
-        }
+  const computeExpectedCurrentDay = useCallback(
+    (settings: ChallengeSettings, now: Date): number => {
+      // Prefer startDate/dayDuration if present
+      if (settings.startDate && settings.dayDuration) {
+        const start = settings.startDate.toDate
+          ? settings.startDate.toDate()
+          : new Date(settings.startDate);
+        const elapsedMs = now.getTime() - start.getTime();
+        const dayLengthMs = settings.dayDuration * 60 * 60 * 1000;
+        const passed = Math.floor(elapsedMs / dayLengthMs);
+        return Math.min(Math.max(passed, 0), 14);
       }
-      return Math.min(Math.max(maxActive, 0), 14);
-    }
 
-    return settings.currentDay || 0;
-  }, []);
+      // Fallback: derive from challengeDays scheduledDate (date-only compare)
+      if (settings.challengeDays && settings.challengeDays.length > 0) {
+        let maxActive = 0;
+        for (const d of settings.challengeDays) {
+          const scheduled = d.scheduledDate?.toDate
+            ? d.scheduledDate.toDate()
+            : new Date(d.scheduledDate);
+          if (scheduled.getTime() <= now.getTime()) {
+            maxActive = Math.max(maxActive, d.dayNumber);
+          }
+        }
+        return Math.min(Math.max(maxActive, 0), 14);
+      }
+
+      return settings.currentDay || 0;
+    },
+    []
+  );
 
   // Ensure currentDay auto-aligns at app load and on midnight rollover
   useEffect(() => {
     const alignDayIfNeeded = async () => {
-      if (!challengeSettings || !challengeSettings.isActive || challengeSettings.isPaused) return;
+      if (
+        !challengeSettings ||
+        !challengeSettings.isActive ||
+        challengeSettings.isPaused
+      )
+        return;
       const now = new Date();
       const expected = computeExpectedCurrentDay(challengeSettings, now);
       if (expected > challengeSettings.currentDay) {
@@ -653,7 +694,7 @@ const ParticipantDashboard: React.FC = () => {
 
       // Block updates when challenge is paused
       if (challengeSettings?.isPaused) {
-        console.warn('Challenge is paused. Task updates are disabled.');
+        console.warn("Challenge is paused. Task updates are disabled.");
         return;
       }
 
@@ -685,50 +726,64 @@ const ParticipantDashboard: React.FC = () => {
 
   // Get tracking date for a specific day
   const getTrackingDateForDay = (dayNumber: number): string => {
-    if (!challengeSettings?.challengeDays || challengeSettings.challengeDays.length === 0) {
+    if (
+      !challengeSettings?.challengeDays ||
+      challengeSettings.challengeDays.length === 0
+    ) {
       // Fallback: calculate tracking date as yesterday
       const today = new Date();
-      const trackingDate = new Date(today.getTime() - (24 * 60 * 60 * 1000));
-      return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const trackingDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      return trackingDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
     }
-    
+
     // Find the challenge day data
-    const challengeDay = challengeSettings.challengeDays.find(day => day.dayNumber === dayNumber);
+    const challengeDay = challengeSettings.challengeDays.find(
+      (day) => day.dayNumber === dayNumber
+    );
     if (challengeDay && challengeDay.trackingDate) {
       const trackingDate = challengeDay.trackingDate.toDate();
-      return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return trackingDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
     }
-    
+
     // Fallback for trial day or missing data
     if (dayNumber === 0) {
-      return 'Prep';
+      return "Prep";
     }
-    
+
     // Default fallback
     const today = new Date();
-    const trackingDate = new Date(today.getTime() - (24 * 60 * 60 * 1000));
-    return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const trackingDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    return trackingDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   // Check if challenge has actually started (not just scheduled)
   const hasChallengeStarted = (): boolean => {
     if (!challengeSettings) return false;
     if (!challengeSettings.isActive) return false;
-    
+
     // If there's a scheduled start date, check if it has passed
     if (challengeSettings.scheduledStartDate) {
       const now = new Date();
       const scheduledStart = challengeSettings.scheduledStartDate.toDate();
       return now >= scheduledStart;
     }
-    
+
     // If there's an actual start date, check if it has passed
     if (challengeSettings.startDate) {
       const now = new Date();
       const actualStart = challengeSettings.startDate.toDate();
       return now >= actualStart;
     }
-    
+
     // If no dates are set but challenge is active, assume it has started
     return true;
   };
@@ -739,17 +794,17 @@ const ParticipantDashboard: React.FC = () => {
     if (!challengeSettings.isActive) return false;
     if (challengeSettings.isPaused) return false;
     if (!hasChallengeStarted()) return false; // NEW: Check if challenge has actually started
-    
+
     // If trial days are disabled, do not consider day 0 tasks for participants
     if (!challengeSettings.trialEnabled && task.dayNumber === 0) {
       return false;
     }
-    
+
     // If trial days are enabled, day 0 tasks are always available when current day is 0
     if (challengeSettings.trialEnabled && task.dayNumber === 0) {
       return challengeSettings.currentDay >= 0;
     }
-    
+
     return task.dayNumber <= challengeSettings.currentDay;
   };
 
@@ -759,18 +814,21 @@ const ParticipantDashboard: React.FC = () => {
     if (!challengeSettings.isActive) return [];
     if (challengeSettings.isPaused) return [];
     if (!hasChallengeStarted()) return []; // NEW: Check if challenge has actually started
-    
+
     // If trial days are disabled, do not consider day 0 tasks for participants
     if (!challengeSettings.trialEnabled) {
       // Skip day 0 tasks entirely when trial is disabled
-      return tasks.filter(task => task.dayNumber === challengeSettings.currentDay && task.dayNumber > 0);
+      return tasks.filter(
+        (task) =>
+          task.dayNumber === challengeSettings.currentDay && task.dayNumber > 0
+      );
     }
-    
-    // If trial days are enabled, show trial day (day 0) if current day is 0, otherwise show current day tasks
-    const targetDay = challengeSettings.currentDay === 0 ? 0 : challengeSettings.currentDay;
-    return tasks.filter(task => task.dayNumber === targetDay);
-  };
 
+    // If trial days are enabled, show trial day (day 0) if current day is 0, otherwise show current day tasks
+    const targetDay =
+      challengeSettings.currentDay === 0 ? 0 : challengeSettings.currentDay;
+    return tasks.filter((task) => task.dayNumber === targetDay);
+  };
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
@@ -783,8 +841,14 @@ const ParticipantDashboard: React.FC = () => {
         {/* Enhanced animated background */}
         <div className="absolute inset-0">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
+          <div
+            className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          />
+          <div
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "4s" }}
+          />
         </div>
 
         {/* Floating particles */}
@@ -812,7 +876,7 @@ const ParticipantDashboard: React.FC = () => {
           <div className="relative w-32 h-32 mx-auto mb-8">
             {/* Outer glow ring */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 blur-xl animate-pulse" />
-            
+
             {/* Outer ring */}
             <div className="absolute inset-0 rounded-full border-4 border-blue-200/30" />
 
@@ -868,7 +932,10 @@ const ParticipantDashboard: React.FC = () => {
         {/* Animated background */}
         <div className="absolute inset-0">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div
+            className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          />
         </div>
 
         {/* Fixed paused header that stays at top during scroll */}
@@ -878,15 +945,16 @@ const ParticipantDashboard: React.FC = () => {
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 <Pause className="w-5 h-5 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-white">
-                Challenge Paused
-              </h2>
+              <h2 className="text-xl font-bold text-white">Challenge Paused</h2>
             </div>
           </div>
         </div>
 
         {/* Scrollable content area - entire screen scrolls now */}
-        <div className="overflow-y-auto" style={{ height: 'calc(100vh - 80px)' }}>
+        <div
+          className="overflow-y-auto"
+          style={{ height: "calc(100vh - 80px)" }}
+        >
           <div className="pb-6 px-4 py-6 max-w-2xl mx-auto">
             <div className="text-center mb-8">
               <div className="relative mb-6">
@@ -897,11 +965,14 @@ const ParticipantDashboard: React.FC = () => {
               </div>
 
               <p className="text-lg text-slate-600 mb-6">
-                The Focus Challenge is temporarily paused by the administrator. Task tracking is on hold.
+                The Focus Challenge is temporarily paused by the administrator.
+                Task tracking is on hold.
               </p>
 
               <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-8">
-                <h3 className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-4">While it's paused</h3>
+                <h3 className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                  While it's paused
+                </h3>
                 <ul className="space-y-3 text-left">
                   <li className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -941,12 +1012,16 @@ const ParticipantDashboard: React.FC = () => {
                   <span className="text-xs font-bold text-amber-700">Live</span>
                 </div>
               </div>
-              
+
               {/* Leaderboard without internal scrolling - now scrolls with entire page */}
               <div className="rounded-xl border border-white/40">
-                <Leaderboard className="shadow-none max-w-none" maxEntries={50} disableInternalScrolling={true} />
+                <Leaderboard
+                  className="shadow-none max-w-none"
+                  maxEntries={50}
+                  disableInternalScrolling={true}
+                />
               </div>
-              
+
               <p className="text-center text-sm text-slate-500 mt-4">
                 Rankings are updated in real-time
               </p>
@@ -969,8 +1044,10 @@ const ParticipantDashboard: React.FC = () => {
   // Challenge active but not started yet - show waiting area
   if (challengeSettings?.isActive && !hasChallengeStarted()) {
     // Show pre-challenge countdown for active but not started challenge
-    const scheduledStart = challengeSettings.scheduledStartDate?.toDate() || challengeSettings.startDate?.toDate();
-    
+    const scheduledStart =
+      challengeSettings.scheduledStartDate?.toDate() ||
+      challengeSettings.startDate?.toDate();
+
     return (
       <PreChallengeCountdown
         scheduledStartDate={scheduledStart}
@@ -985,9 +1062,10 @@ const ParticipantDashboard: React.FC = () => {
   // Challenge inactive state - check if scheduled, completed, or truly inactive
   if (!challengeSettings?.isActive) {
     // Check if challenge is scheduled to start
-    const isScheduled = challengeSettings?.scheduledStartDate && 
-                       new Date() < challengeSettings.scheduledStartDate.toDate();
-    
+    const isScheduled =
+      challengeSettings?.scheduledStartDate &&
+      new Date() < challengeSettings.scheduledStartDate.toDate();
+
     if (isScheduled) {
       // Show pre-challenge countdown
       return (
@@ -1000,13 +1078,14 @@ const ParticipantDashboard: React.FC = () => {
         />
       );
     }
-    
+
     // Check if challenge has ended (has end date and it's passed)
     // For testing: also show completion if challenge is inactive and has participants
-    const hasEnded = (challengeSettings?.endDate && 
-                     new Date() > challengeSettings.endDate.toDate()) ||
-                     (!challengeSettings?.isActive && allParticipants.length > 0);
-    
+    const hasEnded =
+      (challengeSettings?.endDate &&
+        new Date() > challengeSettings.endDate.toDate()) ||
+      (!challengeSettings?.isActive && allParticipants.length > 0);
+
     if (hasEnded && userProgress && challengeSettings) {
       // Convert UserRole to UserProgress format
       const userProgressData: UserProgress = {
@@ -1016,11 +1095,12 @@ const ParticipantDashboard: React.FC = () => {
         progress: userProgress.progress,
         points: userProgress.points,
         totalPoints: userProgress.totalPoints,
-        completedTasks: Object.values(userProgress.progress).filter(Boolean).length,
+        completedTasks: Object.values(userProgress.progress).filter(Boolean)
+          .length,
         joinedAt: userProgress.joinedAt,
-        rank: userProgress.rank
+        rank: userProgress.rank,
       };
-      
+
       // Show completion screen with results
       return (
         <ChallengeCompletion
@@ -1032,15 +1112,18 @@ const ParticipantDashboard: React.FC = () => {
         />
       );
     }
-    
+
     // Show inactive state
     return (
       <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-400/10 to-orange-400/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-            </div>
+          <div
+            className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          />
+        </div>
 
         <div className="flex items-center justify-center min-h-screen p-4 relative z-10">
           <div className="text-center max-w-lg">
@@ -1050,16 +1133,18 @@ const ParticipantDashboard: React.FC = () => {
               </div>
               <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 rounded-full blur-xl opacity-30 animate-pulse" />
             </div>
-            
+
             <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-4">
               Challenge Inactive
             </h2>
             <p className="text-xl text-slate-600 mb-8">
               The Focus Challenge is currently not active.
             </p>
-            
+
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50 mb-8">
-              <h3 className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">While you wait:</h3>
+              <h3 className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+                While you wait:
+              </h3>
               <ul className="space-y-4 text-left">
                 <li className="flex items-center space-x-4">
                   <div className="w-8 h-8 bg-gradient-to-br from-violet-100 to-purple-100 rounded-2xl flex items-center justify-center shadow-lg">
@@ -1087,7 +1172,7 @@ const ParticipantDashboard: React.FC = () => {
                 </li>
               </ul>
             </div>
-            
+
             <button
               onClick={signOut}
               className="bg-gradient-to-r from-rose-500 via-red-500 to-pink-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-rose-200/50 transition-all duration-300 transform hover:scale-105"
@@ -1104,33 +1189,34 @@ const ParticipantDashboard: React.FC = () => {
     ? Object.values(userProgress.progress).filter(Boolean).length
     : 0;
   const totalPoints = userProgress?.totalPoints || 0;
-  
+
   // Calculate progress based on current day tasks
   const currentDayTasks = getCurrentDayTasks();
-  const currentDayCompletedTasks = currentDayTasks.filter(task => {
+  const currentDayCompletedTasks = currentDayTasks.filter((task) => {
     return userProgress?.progress?.[task.id] === true;
   }).length;
-  
-  const progressPercentage = currentDayTasks.length > 0 
-    ? (currentDayCompletedTasks / currentDayTasks.length) * 100 
-    : 0;
+
+  const progressPercentage =
+    currentDayTasks.length > 0
+      ? (currentDayCompletedTasks / currentDayTasks.length) * 100
+      : 0;
 
   // Get current day info
   const getCurrentDayInfo = () => {
     const now = new Date();
-    const gregorianDate = now.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long', 
-      day: 'numeric' 
+    const gregorianDate = now.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
-    
+
     const currentDay = challengeSettings?.currentDay ?? 1;
-    
+
     return {
       currentDay: currentDay,
       isTrialDay: currentDay === 0 && challengeSettings?.trialEnabled,
-      gregorianDate: gregorianDate
+      gregorianDate: gregorianDate,
     };
   };
 
@@ -1139,9 +1225,15 @@ const ParticipantDashboard: React.FC = () => {
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/5 to-blue-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
-                </div>
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/5 to-blue-400/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "4s" }}
+        />
+      </div>
 
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-20">
@@ -1155,113 +1247,124 @@ const ParticipantDashboard: React.FC = () => {
 
       {/* Scrollable Content Area */}
       <div className="pt-18 pb-20 min-h-[calc(100dvh-4.5rem)] overflow-y-auto">
-          {currentTab === "challenges" && (
-            <div className="px-3 pt-0 pb-3">
-              {/* Optimized Tasks Container */}
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+        {currentTab === "challenges" && (
+          <div className="px-3 pt-0 pb-3">
+            {/* Optimized Tasks Container */}
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
 
-                <div className="p-4 pt-4">
-                    {/* Day Tracking Card - Only for Challenges Tab */}
-                    <div className="mb-2 mt-1">
-                      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-2 shadow-lg relative overflow-hidden">
-                        <div className="absolute inset-0 bg-white/10" />
-                        <div className="relative text-white flex items-center justify-between px-2">
-                          <div className="flex items-center space-x-2">
-                          <CalendarDays className="w-4 h-4 text-white" />
-                          <div className="text-xs font-bold text-white">
-                            Tracking: {getTrackingDateForDay(getCurrentDayInfo().currentDay)}
-                          </div>
-                        </div>
-                          {challengeSettings?.isActive && !challengeSettings?.isPaused && (
-                            <div className="text-[10px] sm:text-xs font-semibold bg-white/15 border border-white/20 rounded-md px-2 py-1">
-                              Ends in {timeLeftDisplay || '—'}
-                            </div>
+              <div className="p-4 pt-4">
+                {/* Day Tracking Card - Only for Challenges Tab */}
+                <div className="mb-2 mt-1">
+                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-2 shadow-lg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-white/10" />
+                    <div className="relative text-white flex items-center justify-between px-2">
+                      <div className="flex items-center space-x-2">
+                        <CalendarDays className="w-4 h-4 text-white" />
+                        <div className="text-xs font-bold text-white">
+                          Tracking:{" "}
+                          {getTrackingDateForDay(
+                            getCurrentDayInfo().currentDay
                           )}
                         </div>
                       </div>
+                      {challengeSettings?.isActive &&
+                        !challengeSettings?.isPaused && (
+                          <div className="text-[10px] sm:text-xs font-semibold bg-white/15 border border-white/20 rounded-md px-2 py-1">
+                            Ends in {timeLeftDisplay || "—"}
+                          </div>
+                        )}
                     </div>
-
-                    {/* Task List Header with Progress */}
-                    <div className="mb-4 pb-3 border-b border-gray-200/50">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-base font-bold text-gray-900">
-                            {getCurrentDayInfo().isTrialDay ? 'Trial Day Tasks' : `Day ${getCurrentDayInfo().currentDay} Tasks`}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {currentDayCompletedTasks} of {currentDayTasks.length} completed
-                          </p>
-                  </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="w-16 h-2 bg-gray-200 rounded-full">
-                            <div
-                              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
-                        style={{ width: `${progressPercentage}%` }}
-                      />
-                    </div>
-                          <span className="text-sm font-bold text-blue-600">
-                      {Math.round(progressPercentage)}%
-                    </span>
                   </div>
                 </div>
-              </div>
 
-                  {tasksLoading ? (
-                      <div className="space-y-3">
-                        {[...Array(6)].map((_, index) => (
-                        <div key={index} className="animate-pulse">
-                            <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-3 h-16">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gray-300 rounded-xl" />
-                                <div className="flex-1 space-y-1">
-                                  <div className="h-3 bg-gray-300 rounded w-3/4" />
-                                  <div className="h-2 bg-gray-300 rounded w-1/2" />
-                </div>
-                                <div className="w-8 h-8 bg-gray-300 rounded-xl" />
-                  </div>
-              </div>
-                        </div>
-                      ))}
-                    </div>
-                    ) : getCurrentDayTasks().length === 0 ? (
-                    <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                          <BookOpen className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <h4 className="text-base font-bold text-gray-700 mb-1">
-                          No Tasks Today
-                      </h4>
-                        <p className="text-sm text-gray-500">
-                          {challengeSettings?.currentDay === 0 
-                            ? "Trial day tasks coming soon"
-                            : `Day ${challengeSettings?.currentDay} tasks loading...`
-                          }
+                {/* Task List Header with Progress */}
+                <div className="mb-4 pb-3 border-b border-gray-200/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">
+                        {getCurrentDayInfo().isTrialDay
+                          ? "Trial Day Tasks"
+                          : `Day ${getCurrentDayInfo().currentDay} Tasks`}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {currentDayCompletedTasks} of {currentDayTasks.length}{" "}
+                        completed
                       </p>
                     </div>
-                  ) : (
-                    <div
-                        className="space-y-3 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-                        style={{ maxHeight: "calc(100dvh - 280px)" }}
-                      >
-                      {getCurrentDayTasks()
-                        .sort((a, b) => {
-                          const ai = (a as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
-                          const bi = (b as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
-                          if (ai !== bi) return ai - bi;
-                          return a.title.localeCompare(b.title);
-                        })
-                        .map((task, index) => {
+                    <div className="flex items-center space-x-3">
+                      <div className="w-16 h-2 bg-gray-200 rounded-full">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                          style={{ width: `${progressPercentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-bold text-blue-600">
+                        {Math.round(progressPercentage)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {tasksLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(6)].map((_, index) => (
+                      <div key={index} className="animate-pulse">
+                        <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-3 h-16">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gray-300 rounded-xl" />
+                            <div className="flex-1 space-y-1">
+                              <div className="h-3 bg-gray-300 rounded w-3/4" />
+                              <div className="h-2 bg-gray-300 rounded w-1/2" />
+                            </div>
+                            <div className="w-8 h-8 bg-gray-300 rounded-xl" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : getCurrentDayTasks().length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                      <BookOpen className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-base font-bold text-gray-700 mb-1">
+                      No Tasks Today
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      {challengeSettings?.currentDay === 0
+                        ? "Trial day tasks coming soon"
+                        : `Day ${challengeSettings?.currentDay} tasks loading...`}
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className="space-y-3 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                    style={{ maxHeight: "calc(100dvh - 280px)" }}
+                  >
+                    {getCurrentDayTasks()
+                      .sort((a, b) => {
+                        const ai =
+                          (a as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
+                        const bi =
+                          (b as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
+                        if (ai !== bi) return ai - bi;
+                        return a.title.localeCompare(b.title);
+                      })
+                      .map((task, index) => {
                         // Fix: Use task.id as the key instead of dayNumber
                         const taskKey = task.id;
-                        const isCompleted = userProgress?.progress?.[taskKey] === true;
-                        
+                        const isCompleted =
+                          userProgress?.progress?.[taskKey] === true;
+
                         const uniqueTaskKey = `${task.id}-${taskKey}`;
                         const isUpdating = updatingTask === uniqueTaskKey;
                         const isUnlocked = isTaskUnlocked(task);
                         const cardUniqueKey = `card-${task.id}-${
                           task.dayNumber
-                        }-${task.title.replace(/\s+/g, "-")}-${isCompleted ? 'completed' : 'incomplete'}`;
+                        }-${task.title.replace(/\s+/g, "-")}-${
+                          isCompleted ? "completed" : "incomplete"
+                        }`;
 
                         return (
                           <CompactTaskCard
@@ -1277,157 +1380,180 @@ const ParticipantDashboard: React.FC = () => {
                           />
                         );
                       })}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {currentTab === "leaderboard" && (
-            <div className="px-3 py-3">
-              {/* Leaderboard Container */}
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                
-                <div className="p-4 overflow-y-auto" style={{ maxHeight: "calc(100dvh - 180px)" }}>
-                  <Leaderboard className="shadow-none" maxEntries={50} />
-                </div>
+        {currentTab === "leaderboard" && (
+          <div className="px-3 py-3">
+            {/* Leaderboard Container */}
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+
+              <div
+                className="p-4 overflow-y-auto"
+                style={{ maxHeight: "calc(100dvh - 180px)" }}
+              >
+                <Leaderboard className="shadow-none" maxEntries={50} />
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {currentTab === "profile" && (
-            <div className="px-3 py-3">
-              {/* Profile Container */}
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                
-                <div className="p-4">
-                    <div className="space-y-4">
-                      {/* Compact Profile Header */}
-                      <div className="bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
-                        <div className="absolute inset-0 bg-white/10" />
-                        
-                        <div className="relative flex items-center space-x-4">
-                          {/* Profile Avatar */}
-                          <div className="relative">
-                            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-                              <User className="w-8 h-8 text-white" />
-                    </div>
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-lg" />
+        {currentTab === "profile" && (
+          <div className="px-3 py-3">
+            {/* Profile Container */}
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+
+              <div className="p-4">
+                <div className="space-y-4">
+                  {/* Compact Profile Header */}
+                  <div className="bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-white/10" />
+
+                    <div className="relative flex items-center space-x-4">
+                      {/* Profile Avatar */}
+                      <div className="relative">
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                          <User className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-lg" />
+                      </div>
+
+                      {/* User Info */}
+                      <div className="flex-1">
+                        <h2 className="text-lg font-bold mb-1">
+                          {userRole?.name || "User"}
+                        </h2>
+                        <p className="text-indigo-100 text-sm mb-2">
+                          {userRole?.email}
+                        </p>
+
+                        {/* Stats Row */}
+                        <div className="flex space-x-3">
+                          <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg">
+                            <Award className="w-3 h-3" />
+                            <span className="text-xs font-bold">
+                              #{userProgress?.rank || "-"}
+                            </span>
                           </div>
-                          
-                          {/* User Info */}
-                    <div className="flex-1">
-                            <h2 className="text-lg font-bold mb-1">
-                              {userRole?.name || 'User'}
-                      </h2>
-                            <p className="text-indigo-100 text-sm mb-2">{userRole?.email}</p>
-                            
-                            {/* Stats Row */}
-                            <div className="flex space-x-3">
-                              <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg">
-                                <Award className="w-3 h-3" />
-                                <span className="text-xs font-bold">
-                                  #{userProgress?.rank || "-"}
+                          <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg">
+                            <Star className="w-3 h-3" />
+                            <span className="text-xs font-bold">
+                              {totalPoints}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Yesterday's Progress Card */}
+                  <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200/50 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30" />
+
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-base font-bold text-gray-900">
+                            Today's Progress
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {getCurrentDayInfo().isTrialDay
+                              ? "Trial Day"
+                              : `Day ${getCurrentDayInfo().currentDay}`}{" "}
+                            •{" "}
+                            {new Date().toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <div className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-200/50">
+                          <span className="text-xs font-bold text-blue-700">
+                            {challengeSettings?.currentDay === 0
+                              ? "Trial"
+                              : `Day ${challengeSettings?.currentDay}`}
                           </span>
                         </div>
-                              <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg">
-                                <Star className="w-3 h-3" />
-                                <span className="text-xs font-bold">{totalPoints}</span>
-                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
 
-                      {/* Yesterday's Progress Card */}
-                      <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200/50 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30" />
-                        
-                        <div className="relative">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <h3 className="text-base font-bold text-gray-900">
-                                Today's Progress
-                              </h3>
-                              <p className="text-xs text-gray-500">
-                                {getCurrentDayInfo().isTrialDay ? 'Trial Day' : `Day ${getCurrentDayInfo().currentDay}`} • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </p>
-                            </div>
-                            <div className="bg-blue-50 px-2 py-1 rounded-lg border border-blue-200/50">
-                              <span className="text-xs font-bold text-blue-700">
-                                {challengeSettings?.currentDay === 0 ? 'Trial' : `Day ${challengeSettings?.currentDay}`}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {/* Compact progress bar */}
-                          <div className="relative mb-3">
-                            <div className="w-full bg-gray-200 rounded-full h-2 shadow-inner">
-                              <div
-                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
-                            <div className="absolute -top-0.5 right-0 bg-blue-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
-                              {Math.round(progressPercentage)}%
-                  </div>
-                </div>
-                          
-                          {/* Progress Stats */}
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-blue-600 mb-0.5">
-                                {currentDayCompletedTasks}
-                              </div>
-                              <div className="text-xs text-gray-600">Completed</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-gray-600 mb-0.5">
-                                {currentDayTasks.length - currentDayCompletedTasks}
-                              </div>
-                              <div className="text-xs text-gray-600">Remaining</div>
-                            </div>
-                          </div>
+                      {/* Compact progress bar */}
+                      <div className="relative mb-3">
+                        <div className="w-full bg-gray-200 rounded-full h-2 shadow-inner">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercentage}%` }}
+                          />
+                        </div>
+                        <div className="absolute -top-0.5 right-0 bg-blue-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                          {Math.round(progressPercentage)}%
                         </div>
                       </div>
 
-                      {/* Achievement Cards */}
+                      {/* Progress Stats */}
                       <div className="grid grid-cols-2 gap-3">
-                        {/* Total Points Card */}
-                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-200/50 shadow-md">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
-                              <Star className="w-4 h-4 text-white" />
-                            </div>
-                            <div>
-                              <div className="text-base font-bold text-amber-700">{totalPoints}</div>
-                              <div className="text-xs text-amber-600">Total Points</div>
-                            </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-blue-600 mb-0.5">
+                            {currentDayCompletedTasks}
                           </div>
+                          <div className="text-xs text-gray-600">Completed</div>
                         </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-gray-600 mb-0.5">
+                            {currentDayTasks.length - currentDayCompletedTasks}
+                          </div>
+                          <div className="text-xs text-gray-600">Remaining</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                        {/* Overall Progress Card */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-200/50 shadow-md">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center">
-                              <Target className="w-4 h-4 text-white" />
-                            </div>
-                            <div>
-                              <div className="text-base font-bold text-blue-700">{completedTasks}/{totalChallengeDays}</div>
-                              <div className="text-xs text-blue-600">Overall Tasks</div>
-                            </div>
+                  {/* Achievement Cards */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Total Points Card */}
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-200/50 shadow-md">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
+                          <Star className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-base font-bold text-amber-700">
+                            {totalPoints}
+                          </div>
+                          <div className="text-xs text-amber-600">
+                            Total Points
                           </div>
                         </div>
                       </div>
-
                     </div>
+
+                    {/* Overall Progress Card */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-200/50 shadow-md">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center">
+                          <Target className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-base font-bold text-blue-700">
+                            {completedTasks}/{totalChallengeDays}
+                          </div>
+                          <div className="text-xs text-blue-600">
+                            Overall Tasks
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
       </div>
 
       {/* Fixed Bottom Navigation */}
@@ -1452,30 +1578,32 @@ const ParticipantDashboard: React.FC = () => {
                     <BookOpen className="w-6 h-6 text-white" />
                   </div>
                   <h2 className="font-bold text-xl bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                  {selectedTask.title}
-                </h2>
+                    {selectedTask.title}
+                  </h2>
                 </div>
                 <button
                   onClick={() => setIsTaskModalOpen(false)}
                   className="p-3 hover:bg-gray-100 rounded-2xl transition-all duration-200 group"
                 >
-                  <span className="text-gray-400 text-2xl group-hover:text-gray-600 group-hover:scale-110 transition-all duration-200">×</span>
+                  <span className="text-gray-400 text-2xl group-hover:text-gray-600 group-hover:scale-110 transition-all duration-200">
+                    ×
+                  </span>
                 </button>
               </div>
             </div>
-            
+
             {/* Content */}
             <div className="p-6">
               <div className="mb-6">
                 <p className="text-slate-700 leading-relaxed text-lg mb-4">
-                {selectedTask.description}
-              </p>
-                
+                  {selectedTask.description}
+                </p>
+
                 {/* Task info badges */}
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-2xl border border-blue-200/50">
                     <span className="text-sm font-bold text-blue-700">
-                      Day {selectedTask.dayNumber || 'Trial'}
+                      Day {selectedTask.dayNumber || "Trial"}
                     </span>
                   </div>
                   <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-2 rounded-2xl border border-amber-200/50">
@@ -1485,7 +1613,7 @@ const ParticipantDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {selectedTask.tips && selectedTask.tips.length > 0 && (
                 <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-6 border border-blue-200/50 shadow-lg">
                   <div className="flex items-center space-x-2 mb-4">
@@ -1517,4 +1645,3 @@ const ParticipantDashboard: React.FC = () => {
 };
 
 export default ParticipantDashboard;
-
