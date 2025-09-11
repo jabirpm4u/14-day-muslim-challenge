@@ -1,7 +1,53 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Trophy, BookOpen, Users } from 'lucide-react';
+import PreChallengeCountdown from './PreChallengeCountdown';
+import { ChallengeSettings, checkAndStartChallenge } from '../../firebase/firestore';
 
-const Landing: React.FC = () => {
+interface LandingProps {
+  challengeSettings?: ChallengeSettings | null;
+}
+
+const Landing: React.FC<LandingProps> = ({ challengeSettings }) => {
+  // Check if challenge should start immediately when landing page loads
+  useEffect(() => {
+    const checkAndStart = async () => {
+      if (challengeSettings && !challengeSettings.isActive && challengeSettings.scheduledStartDate) {
+        const now = new Date();
+        const scheduledStart = challengeSettings.scheduledStartDate.toDate();
+        
+        // If scheduled time has passed, start the challenge
+        if (now >= scheduledStart) {
+          console.log('🚀 Landing page: Scheduled start time has passed, starting challenge...');
+          try {
+            await checkAndStartChallenge();
+            // Refresh the page to show the updated state
+            window.location.reload();
+          } catch (error) {
+            console.error('Error starting challenge from landing page:', error);
+          }
+        }
+      }
+    };
+    
+    checkAndStart();
+  }, [challengeSettings]);
+
+  // Check if challenge is scheduled to start
+  const isScheduled = challengeSettings?.scheduledStartDate && 
+                     new Date() < challengeSettings.scheduledStartDate.toDate();
+  
+  // If challenge is scheduled, show countdown
+  if (isScheduled) {
+    return (
+      <PreChallengeCountdown
+        scheduledStartDate={challengeSettings.scheduledStartDate.toDate()}
+        onChallengeStart={() => {
+          // Refresh the page when challenge starts
+          window.location.reload();
+        }}
+      />
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white flex items-center justify-center p-4">
       <div className="max-w-3xl w-full">
@@ -13,7 +59,7 @@ const Landing: React.FC = () => {
           <div className="px-6 pt-4 pb-6">
             <p className="text-center text-sm text-blue-100 mb-2">Ready to Transform Your Life with Sunnah?</p>
             <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-3">FOCUS <span className="block text-3xl md:text-4xl mt-2">CHALLENGE</span></h1>
-            <div className="mx-auto w-max bg-blue-700 px-4 py-1 rounded-lg mb-5 text-sm font-semibold">7-Day Transformation challenge</div>
+            <div className="mx-auto w-max bg-blue-700 px-4 py-1 rounded-lg mb-5 text-sm font-semibold">Focus Challenge</div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
               <div className="flex items-center space-x-2 bg-white/5 rounded-lg p-3 border border-white/10">

@@ -4,13 +4,18 @@ import {
   getAvailableTasks,
   subscribeToUserProgress,
   subscribeToChallengeSettings,
+  subscribeToParticipants,
   updateUserProgress,
-  Task,
-  ChallengeSettings,
+  advanceToNextDay,
+  Task, 
+  ChallengeSettings, 
+  UserProgress,
+  checkAndStartChallenge
 } from "../../firebase/firestore";
-import { advanceToNextDay } from "../../firebase/firestore";
 import { UserRole } from "../../firebase/auth";
 import Leaderboard from "../ui/Leaderboard";
+import PreChallengeCountdown from "../ui/PreChallengeCountdown";
+import ChallengeCompletion from "../ui/ChallengeCompletion";
 import { 
   CheckCircle,
   Trophy,
@@ -24,7 +29,8 @@ import {
   Award,
   BookOpen,
   Target,
-  CalendarDays
+  CalendarDays,
+  Pause
 } from "lucide-react";
 
 // Ultra-Compact Task Card for mobile-first design with complete isolation
@@ -277,7 +283,7 @@ const PremiumHeader: React.FC<{
       case "profile":
         return "My Profile";
       default:
-        return "14-Day Challenge";
+        return "Focus Challenge";
     }
   };
 
@@ -318,7 +324,7 @@ const PremiumHeader: React.FC<{
             {challengeSettings?.isActive && (
               <div className="bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
                 <span className="text-sm font-bold text-blue-700">
-                  {challengeSettings.currentDay === 0 ? 'Trial Day' : `Day ${challengeSettings.currentDay}`}
+                  {challengeSettings.currentDay === 0 && challengeSettings.trialEnabled ? 'Trial Day' : `Day ${challengeSettings.currentDay}`}
                 </span>
               </div>
             )}
@@ -427,6 +433,42 @@ const ParticipantDashboard: React.FC = () => {
   >("challenges");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [allParticipants, setAllParticipants] = useState<UserProgress[]>([]);
+
+  // Calculate total challenge days
+  const totalChallengeDays = challengeSettings?.challengeDays?.length || 0;
+
+  // Check if challenge should start immediately when participant dashboard loads
+  useEffect(() => {
+    const checkAndStart = async () => {
+      if (challengeSettings && !challengeSettings.isActive && challengeSettings.scheduledStartDate) {
+        const now = new Date();
+        const scheduledStart = challengeSettings.scheduledStartDate.toDate();
+        
+        // If scheduled time has passed, start the challenge
+        if (now >= scheduledStart) {
+          console.log('🚀 Participant Dashboard: Scheduled start time has passed, starting challenge...');
+          try {
+            await checkAndStartChallenge();
+            // Refresh the page to show the updated state
+            window.location.reload();
+          } catch (error) {
+            console.error('Error starting challenge from participant dashboard:', error);
+          }
+        }
+      }
+    };
+    
+    checkAndStart();
+  }, [challengeSettings]);
+
+  // Load participants for completion screen
+  useEffect(() => {
+    const unsubscribe = subscribeToParticipants((participants) => {
+      setAllParticipants(participants);
+    });
+    return unsubscribe;
+  }, []);
 
   // Load tasks based on challenge settings
   useEffect(() => {
@@ -557,6 +599,12 @@ const ParticipantDashboard: React.FC = () => {
         return;
       }
 
+      // Block updates when challenge is paused
+      if (challengeSettings?.isPaused) {
+        console.warn('Challenge is paused. Task updates are disabled.');
+        return;
+      }
+
       const uniqueTaskKey = `${taskId}-${dayKey}`;
 
       // Prevent multiple simultaneous updates for the same task
@@ -610,11 +658,46 @@ const ParticipantDashboard: React.FC = () => {
     return trackingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  // Check if challenge has actually started (not just scheduled)
+  const hasChallengeStarted = (): boolean => {
+    if (!challengeSettings) return false;
+    if (!challengeSettings.isActive) return false;
+    
+    // If there's a scheduled start date, check if it has passed
+    if (challengeSettings.scheduledStartDate) {
+      const now = new Date();
+      const scheduledStart = challengeSettings.scheduledStartDate.toDate();
+      return now >= scheduledStart;
+    }
+    
+    // If there's an actual start date, check if it has passed
+    if (challengeSettings.startDate) {
+      const now = new Date();
+      const actualStart = challengeSettings.startDate.toDate();
+      return now >= actualStart;
+    }
+    
+    // If no dates are set but challenge is active, assume it has started
+    return true;
+  };
+
   // Check if a task is unlocked/available
   const isTaskUnlocked = (task: Task): boolean => {
     if (!challengeSettings) return false;
     if (!challengeSettings.isActive) return false;
-    if (task.dayNumber === 0) return true;
+    if (challengeSettings.isPaused) return false;
+    if (!hasChallengeStarted()) return false; // NEW: Check if challenge has actually started
+    
+    // If trial days are disabled, do not consider day 0 tasks for participants
+    if (!challengeSettings.trialEnabled && task.dayNumber === 0) {
+      return false;
+    }
+    
+    // If trial days are enabled, day 0 tasks are always available when current day is 0
+    if (challengeSettings.trialEnabled && task.dayNumber === 0) {
+      return challengeSettings.currentDay >= 0;
+    }
+    
     return task.dayNumber <= challengeSettings.currentDay;
   };
 
@@ -622,8 +705,16 @@ const ParticipantDashboard: React.FC = () => {
   const getCurrentDayTasks = (): Task[] => {
     if (!challengeSettings) return [];
     if (!challengeSettings.isActive) return [];
+    if (challengeSettings.isPaused) return [];
+    if (!hasChallengeStarted()) return []; // NEW: Check if challenge has actually started
     
-    // Show trial day (day 0) if current day is 0, otherwise show current day tasks
+    // If trial days are disabled, do not consider day 0 tasks for participants
+    if (!challengeSettings.trialEnabled) {
+      // Skip day 0 tasks entirely when trial is disabled
+      return tasks.filter(task => task.dayNumber === challengeSettings.currentDay && task.dayNumber > 0);
+    }
+    
+    // If trial days are enabled, show trial day (day 0) if current day is 0, otherwise show current day tasks
     const targetDay = challengeSettings.currentDay === 0 ? 0 : challengeSettings.currentDay;
     return tasks.filter(task => task.dayNumber === targetDay);
   };
@@ -718,8 +809,179 @@ const ParticipantDashboard: React.FC = () => {
     );
   }
 
-  // Challenge inactive state
+  // Challenge paused state - show paused scene and stop interactions
+  if (challengeSettings?.isActive && challengeSettings.isPaused) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50 relative">
+        {/* Animated background */}
+        <div className="absolute inset-0">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+
+        {/* Fixed paused header that stays at top during scroll */}
+        <div className="sticky top-0 z-20 bg-gradient-to-r from-indigo-500 via-blue-600 to-purple-600 shadow-xl">
+          <div className="flex items-center justify-center py-4 px-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <Pause className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white">
+                Challenge Paused
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable content area - entire screen scrolls now */}
+        <div className="overflow-y-auto" style={{ height: 'calc(100vh - 80px)' }}>
+          <div className="pb-6 px-4 py-6 max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="relative mb-6">
+                <div className="w-24 h-24 bg-gradient-to-r from-indigo-500 via-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
+                  <Pause className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-blue-600 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse" />
+              </div>
+
+              <p className="text-lg text-slate-600 mb-6">
+                The Focus Challenge is temporarily paused by the administrator. Task tracking is on hold.
+              </p>
+
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-8">
+                <h3 className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-4">While it's paused</h3>
+                <ul className="space-y-3 text-left">
+                  <li className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Target className="w-3 h-3 text-indigo-600" />
+                    </div>
+                    <span className="text-slate-700 font-medium">
+                      Plan how you'll complete upcoming tasks
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <BookOpen className="w-3 h-3 text-indigo-600" />
+                    </div>
+                    <span className="text-slate-700 font-medium">
+                      Review previous days and reflect on your progress
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Star className="w-3 h-3 text-indigo-600" />
+                    </div>
+                    <span className="text-slate-700 font-medium">
+                      Set new intentions for when the challenge resumes
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Full leaderboard section that scrolls with entire page */}
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
+                  Leaderboard
+                </h3>
+                <div className="bg-amber-50 px-3 py-1 rounded-full border border-amber-200/50">
+                  <span className="text-xs font-bold text-amber-700">Live</span>
+                </div>
+              </div>
+              
+              {/* Leaderboard without internal scrolling - now scrolls with entire page */}
+              <div className="rounded-xl border border-white/40">
+                <Leaderboard className="shadow-none max-w-none" maxEntries={50} disableInternalScrolling={true} />
+              </div>
+              
+              <p className="text-center text-sm text-slate-500 mt-4">
+                Rankings are updated in real-time
+              </p>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={signOut}
+                className="bg-gradient-to-r from-slate-800 via-indigo-800 to-blue-800 text-white px-6 py-3 rounded-xl font-bold hover:shadow-xl hover:shadow-indigo-200/40 transition-all duration-300 transform hover:scale-105"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Challenge active but not started yet - show waiting area
+  if (challengeSettings?.isActive && !hasChallengeStarted()) {
+    // Show pre-challenge countdown for active but not started challenge
+    const scheduledStart = challengeSettings.scheduledStartDate?.toDate() || challengeSettings.startDate?.toDate();
+    
+    return (
+      <PreChallengeCountdown
+        scheduledStartDate={scheduledStart}
+        onChallengeStart={() => {
+          // Refresh the page when challenge starts
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  // Challenge inactive state - check if scheduled, completed, or truly inactive
   if (!challengeSettings?.isActive) {
+    // Check if challenge is scheduled to start
+    const isScheduled = challengeSettings?.scheduledStartDate && 
+                       new Date() < challengeSettings.scheduledStartDate.toDate();
+    
+    if (isScheduled) {
+      // Show pre-challenge countdown
+      return (
+        <PreChallengeCountdown
+          scheduledStartDate={challengeSettings.scheduledStartDate.toDate()}
+          onChallengeStart={() => {
+            // Refresh the page when challenge starts
+            window.location.reload();
+          }}
+        />
+      );
+    }
+    
+    // Check if challenge has ended (has end date and it's passed)
+    // For testing: also show completion if challenge is inactive and has participants
+    const hasEnded = (challengeSettings?.endDate && 
+                     new Date() > challengeSettings.endDate.toDate()) ||
+                     (!challengeSettings?.isActive && allParticipants.length > 0);
+    
+    if (hasEnded && userProgress && challengeSettings) {
+      // Convert UserRole to UserProgress format
+      const userProgressData: UserProgress = {
+        userId: userProgress.uid,
+        name: userProgress.name,
+        email: userProgress.email,
+        progress: userProgress.progress,
+        points: userProgress.points,
+        totalPoints: userProgress.totalPoints,
+        completedTasks: Object.values(userProgress.progress).filter(Boolean).length,
+        joinedAt: userProgress.joinedAt,
+        rank: userProgress.rank
+      };
+      
+      // Show completion screen with results
+      return (
+        <ChallengeCompletion
+          userProgress={userProgressData}
+          allParticipants={allParticipants}
+          challengeSettings={challengeSettings}
+          totalTasks={totalChallengeDays}
+          showAchievements={false}
+        />
+      );
+    }
+    
+    // Show inactive state
     return (
       <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
         {/* Animated background */}
@@ -738,10 +1000,10 @@ const ParticipantDashboard: React.FC = () => {
             </div>
             
             <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-4">
-              Challenge Paused
+              Challenge Inactive
             </h2>
             <p className="text-xl text-slate-600 mb-8">
-              The 14-Day Proud Muslim Challenge is currently not active.
+              The Focus Challenge is currently not active.
             </p>
             
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50 mb-8">
@@ -815,7 +1077,7 @@ const ParticipantDashboard: React.FC = () => {
     
     return {
       currentDay: currentDay,
-      isTrialDay: currentDay === 0,
+      isTrialDay: currentDay === 0 && challengeSettings?.trialEnabled,
       gregorianDate: gregorianDate
     };
   };
@@ -1088,7 +1350,7 @@ const ParticipantDashboard: React.FC = () => {
                               <Target className="w-4 h-4 text-white" />
                             </div>
                             <div>
-                              <div className="text-base font-bold text-blue-700">{completedTasks}/15</div>
+                              <div className="text-base font-bold text-blue-700">{completedTasks}/{totalChallengeDays}</div>
                               <div className="text-xs text-blue-600">Overall Tasks</div>
                             </div>
                           </div>

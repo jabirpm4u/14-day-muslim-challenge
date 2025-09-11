@@ -39,7 +39,7 @@ const Login: React.FC = () => {
             </div>
             
             <h1 className="text-3xl font-bold text-islamic-dark mb-2">
-              14-Day Proud Muslim Challenge
+              Focus Challenge
             </h1>
             <p className="text-islamic-primary font-medium mb-1">
               السَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ
@@ -52,7 +52,7 @@ const Login: React.FC = () => {
           {/* Description */}
           <div className="mb-8 space-y-3">
             <p className="text-gray-700 leading-relaxed">
-              Join fellow Muslims in this beautiful 14-day journey to strengthen 
+              Join fellow Muslims in this beautiful Focus Challenge journey to strengthen 
               your Islamic identity and practice.
             </p>
             

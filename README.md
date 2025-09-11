@@ -1,11 +1,11 @@
-# 14-Day Proud Muslim Challenge
+# Focus Challenge
 
-# 14-Day Proud Muslim Challenge 🌙
+# Focus Challenge 🌙
 
-[![Deploy to Firebase Hosting](https://github.com/your-username/14-day-muslim-challenge/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/your-username/14-day-muslim-challenge/actions/workflows/firebase-hosting-merge.yml)
+[![Deploy to Firebase Hosting](https://github.com/your-username/focus-challenge/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/your-username/focus-challenge/actions/workflows/firebase-hosting-merge.yml)
 [![Live App](https://img.shields.io/badge/Live%20App-Firebase-orange)](https://focus-challenge2.web.app)
 
-A beautiful, interactive web application to help Muslims strengthen their Islamic identity through a structured 14-day challenge program.
+A beautiful, interactive web application to help Muslims strengthen their Islamic identity through a structured Focus Challenge program.
 
 ## 🌙 Features
 
@@ -28,7 +28,7 @@ A beautiful, interactive web application to help Muslims strengthen their Islami
 
 ## 📱 Challenge Tasks
 
-The 14-day challenge includes rotating tasks focused on:
+The Focus Challenge includes rotating tasks focused on:
 
 1. **Greetings**: Saying "As-salamu alaykum" to fellow Muslims
 2. **Prayer**: Attending Fajr prayer in congregation
@@ -53,7 +53,7 @@ The 14-day challenge includes rotating tasks focused on:
 ### 1. Clone and Install
 ```bash
 git clone <repository-url>
-cd 14-day-proud-muslim-challenge
+cd focus-challenge
 npm install
 ```
 
@@ -84,7 +84,7 @@ npm run build
 ## 👥 User Roles
 
 ### Participant
-- View 14-day challenge tasks
+- View challenge tasks
 - Mark tasks as completed
 - Track personal progress
 - View motivational messages and Quranic verses

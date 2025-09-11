@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import Landing from './components/ui/Landing';
-import { subscribeToChallengeSettings, ChallengeSettings, advanceToNextDay, getCurrentISTDate, convertToIST } from './firebase/firestore';
+import { subscribeToChallengeSettings, ChallengeSettings, advanceToNextDay, getCurrentISTDate, convertToIST, checkAndStartChallenge, checkAndEndChallenge } from './firebase/firestore';
 
 // Lazy load admin and participant dashboards for better performance
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
@@ -73,32 +73,76 @@ const AppRoutes: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Global IST-based day advancement logic (only on first access after 12 AM IST)
+  // Immediate check on app load to start challenge if scheduled time has passed
   React.useEffect(() => {
-    console.log("🔄 IST Day Advancement Effect Triggered");
+    const checkOnLoad = async () => {
+      console.log("🚀 App loaded - checking if challenge should start immediately...");
+      
+      if (!challengeSettings) {
+        console.log("❌ No challenge settings found, skipping immediate check...");
+        return;
+      }
+      
+      try {
+        // Check if challenge should start automatically (immediate check)
+        if (!challengeSettings.isActive && challengeSettings.scheduledStartDate) {
+          console.log("🔍 Immediate check: Challenge not active but has scheduled start date");
+          const started = await checkAndStartChallenge();
+          if (started) {
+            console.log("✅ Challenge started immediately on app load!");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error in immediate challenge check:", error);
+      }
+    };
+    
+    checkOnLoad();
+  }, [challengeSettings?.scheduledStartDate]); // Run when scheduled start date changes
+
+  // Global challenge management logic (start/end checking and day advancement)
+  React.useEffect(() => {
+    console.log("🔄 Challenge Management Effect Triggered");
     console.log("Challenge Settings:", challengeSettings);
     
-    const checkAndAdvanceDayIST = async () => {
-      console.log("🚀 checkAndAdvanceDayIST function called");
+    const checkChallengeStatus = async () => {
+      console.log("🚀 checkChallengeStatus function called");
       
       if (!challengeSettings) {
         console.log("❌ No challenge settings found, skipping...");
         return;
       }
       
-      if (!challengeSettings.isActive) {
-        console.log("❌ Challenge is not active, skipping...");
-        return;
-      }
-      
-      if (challengeSettings.isPaused) {
-        console.log("❌ Challenge is paused, skipping...");
-        return;
-      }
-      
-      console.log("✅ Challenge is active and not paused, proceeding with IST check...");
-      
       try {
+        // Check if challenge should start automatically
+        if (!challengeSettings.isActive) {
+          console.log("🔍 Checking if challenge should start automatically...");
+          const started = await checkAndStartChallenge();
+          if (started) {
+            console.log("✅ Challenge started automatically!");
+            return; // Exit early if challenge just started
+          }
+        }
+        
+        // Check if challenge should end automatically
+        if (challengeSettings.isActive) {
+          console.log("🔍 Checking if challenge should end automatically...");
+          const ended = await checkAndEndChallenge();
+          if (ended) {
+            console.log("✅ Challenge ended automatically!");
+            return; // Exit early if challenge just ended
+          }
+        }
+        
+        // Only proceed with day advancement if challenge is active and not paused
+        if (!challengeSettings.isActive || challengeSettings.isPaused) {
+          console.log("❌ Challenge is not active or is paused, skipping day advancement...");
+          return;
+        }
+        
+        console.log("✅ Challenge is active and not paused, proceeding with IST day advancement...");
+        
         // Get current IST time using utility function
         const istDate = getCurrentISTDate();
         const istDateString = istDate.toDateString(); // Format: "Mon Jan 01 2024"
@@ -127,11 +171,15 @@ const AppRoutes: React.FC = () => {
         console.log(`📊 Expected Day: ${expectedDay}`);
         console.log(`📊 Start Date: ${challengeSettings.startDate}`);
         
-        if (expectedDay > challengeSettings.currentDay) {
-          console.log(`🚀 IST Day Advancement: Advancing from day ${challengeSettings.currentDay} to day ${expectedDay} on ${istDateString}`);
+        // Check if expected day is within challenge duration
+        const maxDays = challengeSettings.challengeDays.length;
+        const cappedExpectedDay = Math.min(expectedDay, maxDays - 1);
+        
+        if (cappedExpectedDay > challengeSettings.currentDay) {
+          console.log(`🚀 IST Day Advancement: Advancing from day ${challengeSettings.currentDay} to day ${cappedExpectedDay} on ${istDateString}`);
           
           // Advance stepwise to ensure task activation/deactivation logic runs
-          for (let d = challengeSettings.currentDay; d < expectedDay; d++) {
+          for (let d = challengeSettings.currentDay; d < cappedExpectedDay; d++) {
             console.log(`  → Advancing to day ${d + 1}...`);
             await advanceToNextDay(d);
           }
@@ -140,10 +188,10 @@ const AppRoutes: React.FC = () => {
           localStorage.setItem(lastAdvancementKey, istDateString);
           console.log(`✅ Day advancement completed for ${istDateString}`);
         } else {
-          console.log(`ℹ️ No day advancement needed. Current: ${challengeSettings.currentDay}, Expected: ${expectedDay}`);
+          console.log(`ℹ️ No day advancement needed. Current: ${challengeSettings.currentDay}, Expected: ${cappedExpectedDay}`);
         }
       } catch (e) {
-        console.error("❌ IST day advancement failed:", e);
+        console.error("❌ Challenge management failed:", e);
       }
     };
 
@@ -177,7 +225,7 @@ const AppRoutes: React.FC = () => {
         
         if (scheduledDateString === todayISTString) {
           console.log(`✅ Found matching day! Day ${day.dayNumber} matches today (${todayISTString})`);
-          return day.dayNumber;
+          return Math.min(day.dayNumber, settings.challengeDays.length - 1);
         }
       }
       
@@ -185,8 +233,13 @@ const AppRoutes: React.FC = () => {
       return settings.currentDay || 0;
     };
 
-    // Run IST-based day advancement check
-    checkAndAdvanceDayIST();
+    // Run challenge management check
+    checkChallengeStatus();
+    
+    // Set up interval to check every minute for scheduled start/end
+    const interval = setInterval(checkChallengeStatus, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
   }, [challengeSettings]);
 
   if (loading) {
@@ -230,7 +283,7 @@ const AppRoutes: React.FC = () => {
         path="/" 
         element={
           challengeSettings && !challengeSettings.isActive ? (
-            <Landing />
+            <Landing challengeSettings={challengeSettings} />
           ) : user && userRole ? (
             <Navigate to={userRole.role === 'admin' ? '/admin' : '/dashboard'} replace />
           ) : (
@@ -259,7 +312,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gradient-to-br from-islamic-light to-white">
+        <div className="bg-gradient-to-br from-islamic-light to-white">
           <AppRoutes />
         </div>
       </Router>

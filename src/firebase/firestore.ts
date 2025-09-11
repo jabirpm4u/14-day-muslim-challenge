@@ -25,7 +25,7 @@ const debouncedUpdateLeaderboard = () => {
   if (leaderboardUpdateTimeout) {
     clearTimeout(leaderboardUpdateTimeout);
   }
-  
+
   leaderboardUpdateTimeout = setTimeout(async () => {
     try {
       await updateLeaderboard();
@@ -61,7 +61,10 @@ export interface ChallengeSettings {
   id: string;
   isActive: boolean; // Whether challenge is currently running
   isPaused: boolean; // Whether challenge is paused
-  startDate: any; // Firebase timestamp
+  startDate: any; // Firebase timestamp - when challenge actually started
+  endDate?: any; // Firebase timestamp - when challenge will end
+  scheduledStartDate?: any; // Firebase timestamp - when challenge is scheduled to start
+  scheduledEndDate?: any; // Firebase timestamp - when challenge is scheduled to end
   currentDay: number; // Current active day (0 = trial, 1-14 = actual days)
   dayDuration: number; // Duration of each day in hours (default 24)
   trialEnabled: boolean; // Whether trial day is enabled
@@ -94,12 +97,12 @@ export interface LeaderboardEntry {
   lastUpdated: any;
 }
 
-// Enhanced tasks for the 14-day challenge with better categorization
+// Enhanced tasks for the Focus Challenge with better categorization
 export const defaultTasks: Omit<Task, 'id'>[] = [
   {
     dayNumber: 0,
     title: "Trial Day - Prepare Your Heart",
-    description: "Today is your preparation day. Set your intention (niyyah) for the 14-day journey ahead. Read about the challenge and prepare mentally and spiritually.",
+    description: "Today is your preparation day. Set your intention (niyyah) for the Focus Challenge journey ahead. Read about the challenge and prepare mentally and spiritually.",
     points: 10,
     isActive: false,
     category: 'trial',
@@ -263,20 +266,66 @@ export const defaultTasks: Omit<Task, 'id'>[] = [
   }
 ];
 
+// Generate tasks dynamically based on challenge duration
+export const generateTasksForChallenge = (totalDays: number): Omit<Task, 'id'>[] => {
+  const tasks: Omit<Task, 'id'>[] = [];
+
+  // Trial day (Day 0)
+  tasks.push({
+    dayNumber: 0,
+    title: "Trial Day - Prepare Your Heart",
+    description: "Today is your preparation day. Set your intention (niyyah) for the Focus Challenge journey ahead. Read about the challenge and prepare mentally and spiritually.",
+    points: 10,
+    isActive: false,
+    category: 'trial',
+    difficulty: 'easy',
+    estimatedTime: '10 minutes',
+    tips: ['Make a sincere intention (niyyah)', 'Read about Islamic practices', 'Prepare your mindset for the journey']
+  });
+
+  // Generate tasks for each day
+  const taskTemplates = [
+    { title: "Greet Fellow Muslims", description: "Greet at least 10 Muslims with 'As-salamu alaykum' today and respond with 'Wa alaykumu s-salam' when greeted.", points: 20, category: 'social' as const, difficulty: 'easy' as const, estimatedTime: 'Throughout the day', tips: ['Smile when greeting', 'Make eye contact', 'Be the first to greet'] },
+    { title: "Fajr Prayer in Congregation", description: "Pray Fajr Salah in Jama'ah (congregation) at the mosque or with family.", points: 30, category: 'worship' as const, difficulty: 'medium' as const, estimatedTime: '30 minutes', tips: ['Set multiple alarms', 'Sleep early the night before', 'Make wudu before sleeping'] },
+    { title: "Share Islamic Knowledge", description: "Share a Hadith, Qur'an ayah, or give a brief Islamic reminder to someone today.", points: 25, category: 'knowledge' as const, difficulty: 'medium' as const, estimatedTime: '15 minutes', tips: ['Choose something you understand well', 'Share with wisdom and kindness', 'Use appropriate timing'] },
+    { title: "Use Islamic Phrases", description: "Consciously use 'JazakAllahu Khair', 'Insha'Allah', 'MashAllah', 'SubhanAllah' at least 10 times today.", points: 15, category: 'identity' as const, difficulty: 'easy' as const, estimatedTime: 'Throughout the day', tips: ['Be mindful of your speech', 'Use them sincerely', 'Explain meanings when asked'] },
+    { title: "Maintain Islamic Identity", description: "Maintain visible Islamic identity: dress modestly, use natural fragrance, maintain Islamic appearance.", points: 20, category: 'identity' as const, difficulty: 'easy' as const, estimatedTime: 'All day', tips: ['Choose modest clothing', 'Use miswak or maintain oral hygiene', 'Apply natural fragrance'] },
+    { title: "Dhikr and Remembrance", description: "Engage in dhikr (remembrance of Allah) for at least 15 minutes. Recite Tasbih, Tahmid, or read Quran.", points: 25, category: 'worship' as const, difficulty: 'easy' as const, estimatedTime: '15 minutes', tips: ['Use prayer beads if available', 'Find a quiet place', 'Focus on meaning'] },
+    { title: "Help Someone in Need", description: "Perform an act of kindness or help someone today, following the Sunnah of helping others.", points: 30, category: 'social' as const, difficulty: 'medium' as const, estimatedTime: 'Varies', tips: ['Look for opportunities around you', 'Help with sincerity', 'No act of kindness is too small'] }
+  ];
+
+  for (let dayNumber = 1; dayNumber < totalDays; dayNumber++) {
+    const template = taskTemplates[(dayNumber - 1) % taskTemplates.length];
+    tasks.push({
+      dayNumber,
+      title: template.title,
+      description: template.description,
+      points: template.points,
+      isActive: false,
+      category: template.category,
+      difficulty: template.difficulty,
+      estimatedTime: template.estimatedTime,
+      tips: template.tips
+    });
+  }
+
+  return tasks;
+};
+
 // Initialize default tasks in Firestore
 export const initializeDefaultTasks = async (): Promise<void> => {
   try {
     console.log('Initializing default tasks...');
-    
+
     const batch = writeBatch(db);
-    
+
     for (const task of defaultTasks) {
       const taskRef = doc(collection(db, 'tasks'));
       const taskData = { ...task, id: taskRef.id };
       console.log('Adding task:', taskData.title);
       batch.set(taskRef, taskData);
     }
-    
+
     await batch.commit();
     console.log('Default tasks initialized successfully');
   } catch (error) {
@@ -295,27 +344,27 @@ export const getAvailableTasks = async (challengeSettings?: ChallengeSettings | 
   try {
     const tasksQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
     const snapshot = await getDocs(tasksQuery);
-    
+
     if (snapshot.empty) {
       await initializeDefaultTasks();
       return getAvailableTasks(challengeSettings);
     }
-    
+
     const allTasks = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Task));
-    
+
     // If no challenge settings or challenge is inactive, return empty array
     if (!challengeSettings || !challengeSettings.isActive) {
       return [];
     }
-    
+
     // Filter tasks based on current challenge progress
     return allTasks.filter(task => {
       // Trial day (Day 0) is always available when challenge is active
       if (task.dayNumber === 0) return true;
-      
+
       // Regular days are available up to current day
       return task.dayNumber <= challengeSettings.currentDay;
     });
@@ -331,9 +380,9 @@ export const getAllTasks = async (autoInitialize: boolean = false): Promise<Task
     console.log('Getting all tasks from database...');
     const tasksQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
     const snapshot = await getDocs(tasksQuery);
-    
+
     console.log(`Found ${snapshot.docs.length} tasks in database`);
-    
+
     if (snapshot.empty) {
       console.log('No tasks found in database');
       if (autoInitialize) {
@@ -343,12 +392,12 @@ export const getAllTasks = async (autoInitialize: boolean = false): Promise<Task
       }
       return [];
     }
-    
+
     const tasks = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Task));
-    
+
     console.log('Tasks loaded:', tasks.map(t => `Day ${t.dayNumber}: ${t.title}`));
     return tasks;
   } catch (error) {
@@ -360,7 +409,7 @@ export const getAllTasks = async (autoInitialize: boolean = false): Promise<Task
 // Subscribe to tasks changes
 export const subscribeToTasks = (callback: (tasks: Task[]) => void) => {
   const tasksQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
-  
+
   return onSnapshot(tasksQuery, (snapshot) => {
     const tasks = snapshot.docs.map(doc => ({
       id: doc.id,
@@ -374,15 +423,15 @@ export const subscribeToTasks = (callback: (tasks: Task[]) => void) => {
 export const getParticipants = async (): Promise<UserProgress[]> => {
   try {
     const usersQuery = query(
-      collection(db, 'users'), 
+      collection(db, 'users'),
       where('role', '==', 'participant')
     );
     const snapshot = await getDocs(usersQuery);
-    
+
     return snapshot.docs.map(doc => {
       const data = doc.data() as UserRole;
       const completedTasks = Object.values(data.progress).filter(Boolean).length;
-      
+
       return {
         userId: doc.id,
         name: data.name,
@@ -404,17 +453,17 @@ export const getParticipants = async (): Promise<UserProgress[]> => {
 // Subscribe to participants changes
 export const subscribeToParticipants = (callback: (participants: UserProgress[]) => void) => {
   const usersQuery = query(
-    collection(db, 'users'), 
+    collection(db, 'users'),
     where('role', '==', 'participant')
   );
-  
+
   return onSnapshot(usersQuery, (snapshot) => {
     const participants = snapshot.docs.map(doc => {
       const data = doc.data() as UserRole;
       // Safely handle progress field
       const progress = data.progress || {};
       const completedTasks = Object.values(progress).filter(Boolean).length;
-      
+
       return {
         userId: doc.id,
         name: data.name,
@@ -433,25 +482,25 @@ export const subscribeToParticipants = (callback: (participants: UserProgress[])
 
 // Update user progress with points
 export const updateUserProgress = async (
-  userId: string, 
-  day: string, 
+  userId: string,
+  day: string,
   completed: boolean,
   points: number = 0
 ): Promise<void> => {
   try {
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
-    
+
     if (!userDoc.exists()) {
       throw new Error('User document not found');
     }
-    
+
     const userData = userDoc.data() as UserRole;
     const currentPoints = userData.points || {};
     const currentTotalPoints = userData.totalPoints || 0;
-    
+
     let newTotalPoints = currentTotalPoints;
-    
+
     if (completed) {
       // Add points if task is completed
       currentPoints[day] = points;
@@ -462,19 +511,19 @@ export const updateUserProgress = async (
       newTotalPoints = currentTotalPoints - previousPoints;
       currentPoints[day] = 0;
     }
-    
+
     await updateDoc(userRef, {
       [`progress.${day}`]: completed,
       points: currentPoints,
       totalPoints: Math.max(0, newTotalPoints),
       updatedAt: serverTimestamp()
     });
-    
+
     console.log(`✅ User progress updated: ${day} = ${completed ? 'completed' : 'incomplete'}, points: ${points}`);
-    
+
     // Update leaderboard after progress update (debounced, non-blocking)
     debouncedUpdateLeaderboard();
-    
+
   } catch (error) {
     console.error('Error updating user progress:', error);
     throw error;
@@ -485,15 +534,15 @@ export const updateUserProgress = async (
 export const resetParticipantProgress = async (userId: string): Promise<void> => {
   try {
     console.log(`🔄 Starting reset for user: ${userId}`);
-    
+
     // Verify user exists first
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
-    
+
     if (!userDoc.exists()) {
       throw new Error(`User ${userId} not found`);
     }
-    
+
     const userData = userDoc.data() as UserRole;
     console.log(`📋 Current user data:`, {
       name: userData.name,
@@ -501,19 +550,19 @@ export const resetParticipantProgress = async (userId: string): Promise<void> =>
       completedTasks: Object.values(userData.progress || {}).filter(Boolean).length,
       totalPoints: userData.totalPoints || 0
     });
-    
+
     // Create fresh progress and points objects
     const initialProgress: Record<string, boolean> = {};
     const initialPoints: Record<string, number> = {};
-    
+
     // Initialize all days (0-14)
     for (let i = 0; i <= 14; i++) {
       initialProgress[`day${i}`] = false;
       initialPoints[`day${i}`] = 0;
     }
-    
+
     console.log('📝 Updating user document with reset data...');
-    
+
     // Reset all progress and points
     await updateDoc(userRef, {
       progress: initialProgress,
@@ -522,17 +571,17 @@ export const resetParticipantProgress = async (userId: string): Promise<void> =>
       rank: 0,
       updatedAt: serverTimestamp()
     });
-    
+
     console.log(`✅ Successfully reset progress for user: ${userId}`);
-    
+
     // Update leaderboard after reset
     console.log('🏆 Updating leaderboard after reset...');
     await updateLeaderboard();
-    
+
     console.log('🎉 Reset operation completed successfully');
   } catch (error) {
     console.error('❌ Error resetting participant progress:', error);
-    
+
     // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes('permission')) {
@@ -552,39 +601,39 @@ export const resetParticipantProgress = async (userId: string): Promise<void> =>
 export const deleteParticipant = async (userId: string): Promise<void> => {
   try {
     console.log(`🗑️ Starting deletion for user: ${userId}`);
-    
+
     // Verify user exists first
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
-    
+
     if (!userDoc.exists()) {
       throw new Error('User not found');
     }
-    
+
     const userData = userDoc.data() as UserRole;
-    
+
     // Verify user is a participant (safety check)
     if (userData.role !== 'participant') {
       throw new Error('Can only delete participants, not admin users');
     }
-    
+
     console.log(`🔍 Deleting participant: ${userData.name} (${userData.email})`);
-    
+
     // Delete the user document
     await deleteDoc(userRef);
-    
+
     console.log(`✅ Successfully deleted participant: ${userData.name}`);
-    
+
     // Update leaderboard after deletion to ensure user is removed from rankings
     console.log('🏆 Updating leaderboard after deletion...');
     // Add a small delay to ensure deletion has propagated before updating leaderboard
     await new Promise(resolve => setTimeout(resolve, 1000));
     await updateLeaderboard();
-    
+
     console.log('🎉 Deletion operation completed successfully');
   } catch (error) {
     console.error('❌ Error deleting participant:', error);
-    
+
     // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes('permission')) {
@@ -606,7 +655,7 @@ export const deleteParticipant = async (userId: string): Promise<void> => {
 export const createOrUpdateTask = async (task: Omit<Task, 'id'> & { id?: string }): Promise<void> => {
   try {
     console.log('Creating/updating task:', task.title);
-    
+
     if (task.id) {
       // Update existing task
       const taskRef = doc(db, 'tasks', task.id);
@@ -646,13 +695,13 @@ export const deleteTask = async (taskId: string): Promise<void> => {
   try {
     console.log('Deleting task:', taskId);
     const taskRef = doc(db, 'tasks', taskId);
-    
+
     // Check if task exists
     const taskDoc = await getDoc(taskRef);
     if (!taskDoc.exists()) {
       throw new Error('Task not found');
     }
-    
+
     // Note: In a real app, you might want to soft delete or check if task is in use
     await deleteDoc(taskRef);
     console.log('Task deleted successfully');
@@ -683,7 +732,7 @@ export const reorderTasks = async (taskUpdates: { id: string, dayNumber: number 
   try {
     console.log('Reordering tasks:', taskUpdates.length, 'tasks');
     const batch = writeBatch(db);
-    
+
     taskUpdates.forEach(({ id, dayNumber }) => {
       const taskRef = doc(db, 'tasks', id);
       batch.update(taskRef, {
@@ -691,7 +740,7 @@ export const reorderTasks = async (taskUpdates: { id: string, dayNumber: number 
         updatedAt: serverTimestamp()
       });
     });
-    
+
     await batch.commit();
     console.log('Tasks reordered successfully');
   } catch (error) {
@@ -705,11 +754,11 @@ export const getUserProgress = async (userId: string): Promise<UserRole | null> 
   try {
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
-    
+
     if (userDoc.exists()) {
       return userDoc.data() as UserRole;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error getting user progress:', error);
@@ -722,7 +771,7 @@ export const getUserProgress = async (userId: string): Promise<UserRole | null> 
 // Helper function to get current IST date
 export const getCurrentISTDate = (): Date => {
   const now = new Date();
-  const istString = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+  const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
   const istDate = new Date(istString);
   console.log("🌏 getCurrentISTDate called - Original:", now, "IST:", istDate, "IST String:", istString);
   return istDate;
@@ -730,32 +779,65 @@ export const getCurrentISTDate = (): Date => {
 
 // Helper function to convert any date to IST
 export const convertToIST = (date: Date): Date => {
-  const istString = date.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+  const istString = date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
   const istDate = new Date(istString);
   console.log("🌏 convertToIST called - Original:", date, "IST:", istDate, "IST String:", istString);
   return istDate;
 };
 
-// Helper function to generate challenge days with proper date tracking
-const generateChallengeDays = (startDate: Date, dayDuration: number): ChallengeDay[] => {
+// Helper function to calculate challenge duration in days
+const calculateChallengeDuration = (startDate: Date, endDate: Date): number => {
+  const timeDiff = endDate.getTime() - startDate.getTime();
+  const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  return Math.max(1, daysDiff); // At least 1 day
+};
+
+// Helper function to generate challenge days based on specific day count (more reliable)
+const generateChallengeDaysFromCount = (startDate: Date, totalDays: number, dayDuration: number, startingDay: number = 0): ChallengeDay[] => {
   const days: ChallengeDay[] = [];
-  
-  // Generate all 15 days (0-14)
-  for (let dayNumber = 0; dayNumber <= 14; dayNumber++) {
-    const scheduledDate = new Date(startDate.getTime() + (dayNumber * dayDuration * 60 * 60 * 1000));
-    
+
+  // Generate days based on specified count
+  for (let i = 0; i < totalDays; i++) {
+    const dayNumber = startingDay + i; // Start from the specified starting day
+    const scheduledDate = new Date(startDate.getTime() + (i * dayDuration * 60 * 60 * 1000));
+
     // Tracking date is the day before the scheduled date (yesterday's tracking)
     const trackingDate = new Date(scheduledDate.getTime() - (24 * 60 * 60 * 1000));
-    
+
     days.push({
       dayNumber,
       scheduledDate: Timestamp.fromDate(scheduledDate),
       trackingDate: Timestamp.fromDate(trackingDate),
-      isActive: dayNumber === 0, // Only trial day starts active
+      isActive: dayNumber === startingDay, // Only the first day starts active
       isCompleted: false
     });
   }
-  
+
+  return days;
+};
+
+// Helper function to generate challenge days with proper date tracking (legacy method)
+const generateChallengeDays = (startDate: Date, endDate: Date, dayDuration: number, startingDay: number = 0): ChallengeDay[] => {
+  const days: ChallengeDay[] = [];
+  const totalDays = calculateChallengeDuration(startDate, endDate);
+
+  // Generate days based on calculated duration
+  for (let i = 0; i < totalDays; i++) {
+    const dayNumber = startingDay + i; // Start from the specified starting day
+    const scheduledDate = new Date(startDate.getTime() + (i * dayDuration * 60 * 60 * 1000));
+
+    // Tracking date is the day before the scheduled date (yesterday's tracking)
+    const trackingDate = new Date(scheduledDate.getTime() - (24 * 60 * 60 * 1000));
+
+    days.push({
+      dayNumber,
+      scheduledDate: Timestamp.fromDate(scheduledDate),
+      trackingDate: Timestamp.fromDate(trackingDate),
+      isActive: dayNumber === startingDay, // Only the first day starts active
+      isCompleted: false
+    });
+  }
+
   return days;
 };
 
@@ -767,7 +849,7 @@ const calculateCurrentDay = (startDate: Date, dayDuration: number, isPaused: boo
     const daysPassed = Math.floor(elapsed / (dayDuration * 60 * 60 * 1000));
     return Math.min(Math.max(daysPassed, 0), 14);
   }
-  
+
   // Calculate based on current time
   const now = new Date();
   const elapsed = now.getTime() - startDate.getTime();
@@ -778,20 +860,20 @@ const calculateCurrentDay = (startDate: Date, dayDuration: number, isPaused: boo
 // Helper function to recalculate remaining days when resuming
 const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: number, resumeDate: Date, dayDuration: number): ChallengeDay[] => {
   const updatedDays = [...originalDays];
-  
+
   // Update remaining days starting from the paused day
   for (let i = pausedDay; i <= 14; i++) {
     const dayOffset = i - pausedDay;
     const newScheduledDate = new Date(resumeDate.getTime() + (dayOffset * dayDuration * 60 * 60 * 1000));
     const newTrackingDate = new Date(newScheduledDate.getTime() - (24 * 60 * 60 * 1000));
-    
+
     updatedDays[i] = {
       ...updatedDays[i],
       scheduledDate: Timestamp.fromDate(newScheduledDate),
       trackingDate: Timestamp.fromDate(newTrackingDate)
     };
   }
-  
+
   return updatedDays;
 };
 
@@ -799,16 +881,20 @@ const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: numbe
 export const initializeChallengeSettings = async (): Promise<ChallengeSettings> => {
   try {
     console.log('Initializing challenge settings...');
-    
+
     const settingsRef = doc(db, 'settings', 'challenge');
     const now = new Date();
-    const challengeDays = generateChallengeDays(now, 24);
-    
+    const defaultEndDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
+    const challengeDays = generateChallengeDays(now, defaultEndDate, 24, 0); // Default to trial day
+
     const defaultSettings: ChallengeSettings = {
       id: 'challenge',
       isActive: false,
       isPaused: false,
       startDate: null,
+      endDate: null,
+      scheduledStartDate: null,
+      scheduledEndDate: null,
       currentDay: 0,
       dayDuration: 24, // 24 hours
       trialEnabled: true,
@@ -816,10 +902,10 @@ export const initializeChallengeSettings = async (): Promise<ChallengeSettings> 
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    
+
     await setDoc(settingsRef, defaultSettings);
     console.log('Challenge settings initialized successfully');
-    
+
     return defaultSettings;
   } catch (error) {
     console.error('Error initializing challenge settings:', error);
@@ -831,15 +917,15 @@ export const initializeChallengeSettings = async (): Promise<ChallengeSettings> 
 export const getChallengeSettings = async (): Promise<ChallengeSettings | null> => {
   try {
     console.log('Getting challenge settings...');
-    
+
     const settingsRef = doc(db, 'settings', 'challenge');
     const settingsDoc = await getDoc(settingsRef);
-    
+
     if (settingsDoc.exists()) {
       console.log('Challenge settings found');
       return settingsDoc.data() as ChallengeSettings;
     }
-    
+
     // Create default settings if none exist
     console.log('No challenge settings found, creating default...');
     return await initializeChallengeSettings();
@@ -852,20 +938,24 @@ export const getChallengeSettings = async (): Promise<ChallengeSettings | null> 
 // Update challenge settings
 export const updateChallengeSettings = async (settings: Partial<ChallengeSettings>): Promise<void> => {
   try {
-    console.log('Updating challenge settings:', settings);
-    
+    console.log('🔄 UPDATE SETTINGS: Updating challenge settings:', settings);
+
     const settingsRef = doc(db, 'settings', 'challenge');
-    
+
     // Check if document exists first
+    console.log('🔄 UPDATE SETTINGS: Checking if document exists...');
     const currentDoc = await getDoc(settingsRef);
-    
+
     if (!currentDoc.exists()) {
-      console.log('Challenge settings document does not exist, creating it...');
+      console.log('🔄 UPDATE SETTINGS: Challenge settings document does not exist, creating it...');
       const defaultSettings: ChallengeSettings = {
         id: 'challenge',
         isActive: false,
         isPaused: false,
         startDate: null,
+        endDate: null,
+        scheduledStartDate: null,
+        scheduledEndDate: null,
         currentDay: 0,
         dayDuration: 24,
         trialEnabled: true,
@@ -875,15 +965,19 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
         ...settings
       };
       await setDoc(settingsRef, defaultSettings);
+      console.log('🔄 UPDATE SETTINGS: Document created successfully');
     } else {
-      console.log('Updating existing challenge settings...');
-      await updateDoc(settingsRef, {
+      console.log('🔄 UPDATE SETTINGS: Updating existing challenge settings...');
+      const updateData = {
         ...settings,
         updatedAt: serverTimestamp()
-      });
+      };
+      console.log('🔄 UPDATE SETTINGS: Update data:', updateData);
+      await updateDoc(settingsRef, updateData);
+      console.log('🔄 UPDATE SETTINGS: Document updated successfully');
     }
-    
-    console.log('Challenge settings updated successfully');
+
+    console.log('🔄 UPDATE SETTINGS: Challenge settings updated successfully');
   } catch (error) {
     console.error('Detailed error updating challenge settings:', error);
     if (error instanceof Error) {
@@ -899,47 +993,49 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
 export const startChallenge = async (): Promise<void> => {
   try {
     console.log('Starting challenge with automatic date tracking...');
-    
+
     // First ensure default tasks exist
     const tasksQuery = query(collection(db, 'tasks'));
     const tasksSnapshot = await getDocs(tasksQuery);
-    
+
     if (tasksSnapshot.empty) {
       console.log('No tasks found, initializing default tasks...');
       await initializeDefaultTasks();
     }
-    
+
     // Generate challenge dates starting from now
     const startDate = new Date();
-    const challengeDays = generateChallengeDays(startDate, 24); // 24 hours per day
-    
+    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
+    const challengeDays = generateChallengeDays(startDate, endDate, 24, 0); // 24 hours per day, start from trial day
+
     console.log('Generated challenge schedule:');
     challengeDays.forEach(day => {
       const scheduledDate = day.scheduledDate.toDate();
       const trackingDate = day.trackingDate.toDate();
       console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
     });
-    
+
     // Update challenge settings
     const settings: Partial<ChallengeSettings> = {
       isActive: true,
       isPaused: false,
       startDate: Timestamp.fromDate(startDate),
+      endDate: Timestamp.fromDate(endDate),
       currentDay: 0, // Start with trial day
       challengeDays,
       pausedAt: null,
       resumedAt: null
     };
-    
+
     console.log('Updating challenge settings...');
     await updateChallengeSettings(settings);
-    
+
     // Activate trial day task (day 0)
     const trialTasksQuery = query(collection(db, 'tasks'), where('dayNumber', '==', 0));
     const trialTasksSnapshot = await getDocs(trialTasksQuery);
-    
+
     console.log('Found trial tasks:', trialTasksSnapshot.size);
-    
+
     if (!trialTasksSnapshot.empty) {
       const batch = writeBatch(db);
       trialTasksSnapshot.docs.forEach(taskDoc => {
@@ -951,8 +1047,8 @@ export const startChallenge = async (): Promise<void> => {
     } else {
       console.warn('No trial day tasks found to activate');
     }
-    
-    console.log('Challenge started successfully with 14-day schedule!');
+
+    console.log('Challenge started successfully for Focus Challenge schedule!');
   } catch (error) {
     console.error('Detailed error starting challenge:', error);
     if (error instanceof Error) {
@@ -967,41 +1063,68 @@ export const startChallenge = async (): Promise<void> => {
 // Stop challenge
 export const stopChallenge = async (): Promise<void> => {
   try {
-    console.log('Stopping challenge...');
-    
+    console.log('🛑 STOP CHALLENGE: Starting to stop challenge...');
+
+    // Simple test - just update the settings first
     const settings: Partial<ChallengeSettings> = {
       isActive: false,
       isPaused: false,
       currentDay: 0,
       pausedAt: null,
-      resumedAt: null
+      resumedAt: null,
+      // Mark challenge as ended now and clear any future schedules to prevent auto-restart
+      endDate: serverTimestamp(),
+      scheduledStartDate: null,
+      scheduledEndDate: null,
+      updatedAt: serverTimestamp()
     };
-    
-    console.log('Updating challenge settings to inactive...');
-    await updateChallengeSettings(settings);
-    
+
+    console.log('🛑 STOP CHALLENGE: Updating challenge settings to inactive...', settings);
+
+    // Try to update settings directly first
+    const settingsRef = doc(db, 'settings', 'challenge');
+    console.log('🛑 STOP CHALLENGE: Settings ref created:', settingsRef);
+
+    await updateDoc(settingsRef, {
+      isActive: false,
+      isPaused: false,
+      currentDay: 0,
+      pausedAt: null,
+      resumedAt: null,
+      endDate: serverTimestamp(),
+      scheduledStartDate: null,
+      scheduledEndDate: null,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('🛑 STOP CHALLENGE: Challenge settings updated successfully');
+
     // Deactivate all tasks
+    console.log('🛑 STOP CHALLENGE: Deactivating all tasks...');
     const tasksQuery = query(collection(db, 'tasks'));
     const tasksSnapshot = await getDocs(tasksQuery);
-    
-    console.log('Found tasks to deactivate:', tasksSnapshot.size);
-    
+
+    console.log('🛑 STOP CHALLENGE: Found tasks to deactivate:', tasksSnapshot.size);
+
     if (!tasksSnapshot.empty) {
       const batch = writeBatch(db);
       tasksSnapshot.docs.forEach(taskDoc => {
+        console.log('🛑 STOP CHALLENGE: Deactivating task:', taskDoc.id);
         batch.update(taskDoc.ref, { isActive: false });
       });
       await batch.commit();
-      console.log('All tasks deactivated successfully');
+      console.log('🛑 STOP CHALLENGE: All tasks deactivated successfully');
+    } else {
+      console.log('🛑 STOP CHALLENGE: No tasks found to deactivate');
     }
-    
-    console.log('Challenge stopped successfully!');
+
+    console.log('🛑 STOP CHALLENGE: Challenge stopped successfully!');
   } catch (error) {
-    console.error('Detailed error stopping challenge:', error);
+    console.error('❌ STOP CHALLENGE ERROR: Detailed error stopping challenge:', error);
     if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
     }
     throw error;
   }
@@ -1011,21 +1134,21 @@ export const stopChallenge = async (): Promise<void> => {
 export const pauseChallenge = async (): Promise<void> => {
   try {
     console.log('Pausing challenge...');
-    
+
     const settings: Partial<ChallengeSettings> = {
       isPaused: true,
       pausedAt: serverTimestamp()
     };
-    
+
     console.log('Updating challenge settings to paused...');
     await updateChallengeSettings(settings);
-    
+
     // Deactivate all tasks (pause acts like stop for now)
     const tasksQuery = query(collection(db, 'tasks'));
     const tasksSnapshot = await getDocs(tasksQuery);
-    
+
     console.log('Found tasks to deactivate during pause:', tasksSnapshot.size);
-    
+
     if (!tasksSnapshot.empty) {
       const batch = writeBatch(db);
       tasksSnapshot.docs.forEach(taskDoc => {
@@ -1034,7 +1157,7 @@ export const pauseChallenge = async (): Promise<void> => {
       await batch.commit();
       console.log('All tasks deactivated for pause');
     }
-    
+
     console.log('Challenge paused successfully!');
   } catch (error) {
     console.error('Error pausing challenge:', error);
@@ -1046,20 +1169,20 @@ export const pauseChallenge = async (): Promise<void> => {
 export const resumeChallenge = async (): Promise<void> => {
   try {
     console.log('Resuming challenge...');
-    
+
     // Get current settings to calculate where we left off
     const currentSettings = await getChallengeSettings();
     if (!currentSettings || !currentSettings.isPaused || !currentSettings.pausedAt) {
       throw new Error('Challenge is not currently paused');
     }
-    
+
     const resumeDate = new Date();
     const pausedAt = currentSettings.pausedAt.toDate();
     const startDate = currentSettings.startDate.toDate();
-    
+
     // Calculate which day we were on when paused
     const pausedDay = calculateCurrentDay(startDate, currentSettings.dayDuration, true, pausedAt);
-    
+
     // Recalculate remaining challenge days from resume point
     const updatedChallengeDays = recalculateChallengeDays(
       currentSettings.challengeDays,
@@ -1067,28 +1190,28 @@ export const resumeChallenge = async (): Promise<void> => {
       resumeDate,
       currentSettings.dayDuration
     );
-    
+
     console.log('Recalculated challenge schedule from resume:');
     updatedChallengeDays.slice(pausedDay).forEach(day => {
       const scheduledDate = day.scheduledDate.toDate();
       const trackingDate = day.trackingDate.toDate();
       console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
     });
-    
+
     const settings: Partial<ChallengeSettings> = {
       isPaused: false,
       resumedAt: serverTimestamp(),
       currentDay: Math.max(pausedDay, 0), // Resume from paused day or trial
       challengeDays: updatedChallengeDays
     };
-    
+
     console.log(`Resuming challenge from Day ${pausedDay}...`);
     await updateChallengeSettings(settings);
-    
+
     // Activate current day tasks
     const currentDayTasks = query(collection(db, 'tasks'), where('dayNumber', '==', Math.max(pausedDay, 0)));
     const currentTasksSnapshot = await getDocs(currentDayTasks);
-    
+
     if (!currentTasksSnapshot.empty) {
       const batch = writeBatch(db);
       currentTasksSnapshot.docs.forEach(taskDoc => {
@@ -1098,7 +1221,7 @@ export const resumeChallenge = async (): Promise<void> => {
       await batch.commit();
       console.log(`Day ${pausedDay} tasks reactivated successfully`);
     }
-    
+
     console.log('Challenge resumed successfully!');
   } catch (error) {
     console.error('Error resuming challenge:', error);
@@ -1110,30 +1233,38 @@ export const resumeChallenge = async (): Promise<void> => {
 export const advanceToNextDay = async (currentDay: number): Promise<void> => {
   try {
     const nextDay = currentDay + 1;
-    
+
+    // Get current challenge settings to check total days
+    const settings = await getChallengeSettings();
+    if (!settings) {
+      throw new Error('Challenge settings not found');
+    }
+
+    const totalDays = settings.challengeDays.length;
+
     // Deactivate current day tasks
     if (currentDay >= 0) {
       const currentTasksQuery = query(collection(db, 'tasks'), where('dayNumber', '==', currentDay));
       const currentTasksSnapshot = await getDocs(currentTasksQuery);
-      
+
       const batch = writeBatch(db);
       currentTasksSnapshot.docs.forEach(taskDoc => {
         batch.update(taskDoc.ref, { isActive: false });
       });
       await batch.commit();
     }
-    
+
     // Activate next day tasks (if within range)
-    if (nextDay <= 14) {
+    if (nextDay < totalDays) {
       const nextTasksQuery = query(collection(db, 'tasks'), where('dayNumber', '==', nextDay));
       const nextTasksSnapshot = await getDocs(nextTasksQuery);
-      
+
       const batch = writeBatch(db);
       nextTasksSnapshot.docs.forEach(taskDoc => {
         batch.update(taskDoc.ref, { isActive: true });
       });
       await batch.commit();
-      
+
       // Update challenge settings
       await updateChallengeSettings({ currentDay: nextDay });
     } else {
@@ -1146,10 +1277,110 @@ export const advanceToNextDay = async (currentDay: number): Promise<void> => {
   }
 };
 
+// Set scheduled start and end dates for the challenge
+export const setScheduledDates = async (startDate: Date, endDate: Date, totalChallengeDays?: number): Promise<void> => {
+  try {
+    console.log('Setting scheduled dates:', { startDate, endDate, totalChallengeDays });
+
+    // Get current settings to check trial configuration
+    const currentSettings = await getChallengeSettings();
+    const trialEnabled = currentSettings?.trialEnabled ?? true;
+    const startingDay = trialEnabled ? 0 : 1; // Start from day 0 if trial enabled, day 1 if disabled
+
+    // If totalChallengeDays is provided, use it directly; otherwise calculate from dates
+    let challengeDays: ChallengeDay[];
+    if (totalChallengeDays !== undefined) {
+      // Generate days based on the specified total days (more reliable)
+      challengeDays = generateChallengeDaysFromCount(startDate, totalChallengeDays, 24, startingDay);
+    } else {
+      // Fallback to date-based calculation for backward compatibility
+      challengeDays = generateChallengeDays(startDate, endDate, 24, startingDay);
+    }
+
+    const settings: Partial<ChallengeSettings> = {
+      scheduledStartDate: Timestamp.fromDate(startDate),
+      scheduledEndDate: Timestamp.fromDate(endDate),
+      challengeDays,
+      updatedAt: serverTimestamp()
+    };
+
+    await updateChallengeSettings(settings);
+    console.log('Scheduled dates set successfully');
+  } catch (error) {
+    console.error('Error setting scheduled dates:', error);
+    throw error;
+  }
+};
+
+// Check if challenge should start automatically based on scheduled date
+export const checkAndStartChallenge = async (): Promise<boolean> => {
+  try {
+    const settings = await getChallengeSettings();
+    if (!settings || settings.isActive) {
+      return false; // Already active or no settings
+    }
+
+    if (!settings.scheduledStartDate) {
+      return false; // No scheduled start date
+    }
+
+    const now = new Date();
+    const scheduledStart = settings.scheduledStartDate.toDate();
+
+    // Check if scheduled start time has passed (with 1 minute tolerance for exact timing)
+    const timeDiff = now.getTime() - scheduledStart.getTime();
+    const oneMinute = 60 * 1000;
+
+    // If scheduled time has passed (even by hours or days), start the challenge
+    if (timeDiff >= -oneMinute) { // Allow 1 minute early start
+      console.log('Scheduled start time has passed, starting challenge automatically...');
+      console.log('Scheduled start:', scheduledStart.toLocaleString());
+      console.log('Current time:', now.toLocaleString());
+      console.log('Time difference (minutes):', Math.round(timeDiff / (60 * 1000)));
+
+      await startChallenge();
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error checking scheduled start:', error);
+    return false;
+  }
+};
+
+// Check if challenge should end automatically based on scheduled date
+export const checkAndEndChallenge = async (): Promise<boolean> => {
+  try {
+    const settings = await getChallengeSettings();
+    if (!settings || !settings.isActive) {
+      return false; // Not active
+    }
+
+    if (!settings.scheduledEndDate) {
+      return false; // No scheduled end date
+    }
+
+    const now = new Date();
+    const scheduledEnd = settings.scheduledEndDate.toDate();
+
+    if (now >= scheduledEnd) {
+      console.log('Scheduled end time reached, stopping challenge automatically...');
+      await stopChallenge();
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error checking scheduled end:', error);
+    return false;
+  }
+};
+
 // Subscribe to challenge settings
 export const subscribeToChallengeSettings = (callback: (settings: ChallengeSettings | null) => void) => {
   const settingsRef = doc(db, 'settings', 'challenge');
-  
+
   return onSnapshot(settingsRef, (doc) => {
     if (doc.exists()) {
       callback(doc.data() as ChallengeSettings);
@@ -1165,12 +1396,12 @@ export const subscribeToChallengeSettings = (callback: (settings: ChallengeSetti
 export const updateLeaderboard = async (): Promise<void> => {
   try {
     const participants = await getParticipants();
-    
+
     if (participants.length === 0) {
       console.log('No participants found, skipping leaderboard update');
       return;
     }
-    
+
     // Sort by total points, then by completed tasks
     const sortedParticipants = participants.sort((a, b) => {
       if (b.totalPoints !== a.totalPoints) {
@@ -1178,37 +1409,37 @@ export const updateLeaderboard = async (): Promise<void> => {
       }
       return b.completedTasks - a.completedTasks;
     });
-    
+
     // Only update if there are changes in ranking
     const needsUpdate = sortedParticipants.some((participant, index) => {
       const expectedRank = index + 1;
       return participant.rank !== expectedRank;
     });
-    
+
     if (!needsUpdate) {
       console.log('No ranking changes detected, skipping leaderboard update');
       return;
     }
-    
+
     // Update ranks in smaller batches to avoid conflicts
     const batchSize = 10;
     for (let i = 0; i < sortedParticipants.length; i += batchSize) {
       const batch = writeBatch(db);
       const batchParticipants = sortedParticipants.slice(i, i + batchSize);
-      
+
       batchParticipants.forEach((participant, batchIndex) => {
         const userRef = doc(db, 'users', participant.userId);
         const globalIndex = i + batchIndex;
-        batch.update(userRef, { 
+        batch.update(userRef, {
           rank: globalIndex + 1,
           updatedAt: serverTimestamp()
         });
       });
-      
+
       await batch.commit();
       console.log(`Updated leaderboard batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(sortedParticipants.length / batchSize)}`);
     }
-    
+
     console.log('Leaderboard updated successfully');
   } catch (error) {
     console.error('Error updating leaderboard:', error);
@@ -1227,7 +1458,7 @@ export const getLeaderboard = async (): Promise<LeaderboardEntry[]> => {
       orderBy('completedTasks', 'desc')
     );
     const snapshot = await getDocs(usersQuery);
-    
+
     return snapshot.docs.map((doc, index) => {
       const data = doc.data() as UserRole;
       return {
@@ -1252,13 +1483,13 @@ export const subscribeToLeaderboard = (callback: (leaderboard: LeaderboardEntry[
     collection(db, 'users'),
     where('role', '==', 'participant')
   );
-  
+
   return onSnapshot(usersQuery, async (snapshot) => {
     console.log('🔍 subscribeToLeaderboard: Snapshot received', {
       docsCount: snapshot.docs.length,
       isEmpty: snapshot.empty
     });
-    
+
     const participants = snapshot.docs.map(doc => {
       const data = doc.data() as UserRole;
       console.log('📝 Processing user:', {
@@ -1267,11 +1498,11 @@ export const subscribeToLeaderboard = (callback: (leaderboard: LeaderboardEntry[
         role: data.role,
         progressKeys: Object.keys(data.progress || {}),
         totalPoints: data.totalPoints
-      });      
-      
+      });
+
       const progress = data.progress || {};
       const completedTasks = Object.values(progress).filter(Boolean).length;
-      
+
       return {
         userId: doc.id,
         name: data.name,
@@ -1282,7 +1513,7 @@ export const subscribeToLeaderboard = (callback: (leaderboard: LeaderboardEntry[
         lastUpdated: data.updatedAt || data.joinedAt
       };
     });
-    
+
 
     // Sort by total points, then by completed tasks
     const sortedParticipants = participants.sort((a, b) => {
@@ -1291,29 +1522,29 @@ export const subscribeToLeaderboard = (callback: (leaderboard: LeaderboardEntry[
       }
       return b.completedTasks - a.completedTasks;
     });
-    
+
     // Assign ranks based on sorted order
     const rankedParticipants = sortedParticipants.map((participant, index) => ({
       ...participant,
       rank: index + 1
     }));
-    
+
     console.log('🏆 Leaderboard data:', {
       totalParticipants: rankedParticipants.length,
       topParticipants: rankedParticipants.slice(0, 3).map(p => ({ name: p.name, points: p.totalPoints, rank: p.rank }))
     });
-    
+
     callback(rankedParticipants);
   });
 };
 
 // Subscribe to user progress changes
 export const subscribeToUserProgress = (
-  userId: string, 
+  userId: string,
   callback: (user: UserRole | null) => void
 ) => {
   const userRef = doc(db, 'users', userId);
-  
+
   return onSnapshot(userRef, (doc) => {
     if (doc.exists()) {
       callback(doc.data() as UserRole);
@@ -1332,7 +1563,7 @@ export const bulkImportTasks = async (tasksData: {
   replaceExisting?: boolean;
 } = {}): Promise<{ success: number; failed: number; skipped: number; errors: string[] }> => {
   console.log('Starting bulk import of tasks...');
-  
+
   const results = {
     success: 0,
     failed: 0,
@@ -1344,7 +1575,7 @@ export const bulkImportTasks = async (tasksData: {
     // Process tasks in batches to avoid overwhelming Firestore
     const batchSize = 10;
     const tasks = tasksData.tasks;
-    
+
     for (let i = 0; i < tasks.length; i += batchSize) {
       const batch = tasks.slice(i, i + batchSize);
       const batchPromises = batch.map(async (taskData) => {
@@ -1355,10 +1586,10 @@ export const bulkImportTasks = async (tasksData: {
             where('dayNumber', '==', taskData.dayNumber)
           );
           const existingDocs = await getDocs(existingQuery);
-          
+
           if (!existingDocs.empty) {
             const existingTask = existingDocs.docs[0].data() as Task;
-            
+
             if (options.skipExisting) {
               results.skipped++;
               console.log(`⏭️ Skipped day ${taskData.dayNumber}: "${taskData.title}" (existing: "${existingTask.title}")`);
@@ -1386,19 +1617,19 @@ export const bulkImportTasks = async (tasksData: {
           console.error(`❌ ${errorMsg}`);
         }
       });
-      
+
       // Wait for current batch to complete before processing next batch
       await Promise.all(batchPromises);
-      
+
       // Small delay between batches to be respectful to Firestore
       if (i + batchSize < tasks.length) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
-    
+
     console.log(`Bulk import completed: ${results.success} successful, ${results.failed} failed, ${results.skipped} skipped`);
     return results;
-    
+
   } catch (error) {
     console.error('Error during bulk import:', error);
     throw new Error(`Bulk import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1408,54 +1639,54 @@ export const bulkImportTasks = async (tasksData: {
 // Clear all existing tasks (use with caution!)
 export const clearAllTasks = async (): Promise<number> => {
   console.warn('⚠️ Clearing all tasks from database...');
-  
+
   try {
     // First, get all tasks
     const tasksQuery = query(collection(db, 'tasks'));
     const snapshot = await getDocs(tasksQuery);
-    
+
     console.log(`Found ${snapshot.docs.length} tasks to delete`);
-    
+
     if (snapshot.empty) {
       console.log('No tasks to delete');
       return 0;
     }
-    
+
     // Log the tasks we're about to delete for debugging
     snapshot.docs.forEach(doc => {
       const data = doc.data() as Task;
       console.log(`Will delete: Day ${data.dayNumber} - ${data.title} (ID: ${doc.id})`);
     });
-    
+
     // Use batch operations for better reliability
     const batchSize = 10;
     let deletedCount = 0;
-    
+
     for (let i = 0; i < snapshot.docs.length; i += batchSize) {
       const batch = writeBatch(db);
       const batchDocs = snapshot.docs.slice(i, i + batchSize);
-      
+
       batchDocs.forEach(doc => {
         console.log(`Adding to batch delete: ${doc.id}`);
         batch.delete(doc.ref);
       });
-      
+
       console.log(`Committing batch ${Math.floor(i / batchSize) + 1} with ${batchDocs.length} deletions...`);
       await batch.commit();
       deletedCount += batchDocs.length;
-      
+
       console.log(`✅ Deleted batch ${Math.floor(i / batchSize) + 1}: ${batchDocs.length} tasks`);
-      
+
       // Small delay between batches
       if (i + batchSize < snapshot.docs.length) {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
-    
+
     // Verify deletion by checking if any tasks remain
     const verifyQuery = query(collection(db, 'tasks'));
     const verifySnapshot = await getDocs(verifyQuery);
-    
+
     if (verifySnapshot.empty) {
       console.log(`✅ Verification successful: All tasks deleted. Total: ${deletedCount}`);
     } else {
@@ -1465,7 +1696,7 @@ export const clearAllTasks = async (): Promise<number> => {
         console.warn(`Remaining task: Day ${data.dayNumber} - ${data.title} (ID: ${doc.id})`);
       });
     }
-    
+
     console.log(`✅ Successfully deleted ${deletedCount} tasks`);
     return deletedCount;
   } catch (error) {
@@ -1483,18 +1714,18 @@ export const clearAllTasks = async (): Promise<number> => {
 export const forceReloadTasks = async (): Promise<Task[]> => {
   try {
     console.log('Force reloading tasks from database...');
-    
+
     // Use a fresh query without cache
     const tasksQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
     const snapshot = await getDocs(tasksQuery);
-    
+
     console.log(`Force reload found ${snapshot.docs.length} tasks`);
-    
+
     if (snapshot.empty) {
       console.log('Database is empty after force reload');
       return [];
     }
-    
+
     const tasks = snapshot.docs.map(doc => {
       const data = doc.data() as Task;
       console.log(`Found task: Day ${data.dayNumber} - ${data.title} (ID: ${doc.id})`);
@@ -1503,7 +1734,7 @@ export const forceReloadTasks = async (): Promise<Task[]> => {
         id: doc.id
       } as Task;
     });
-    
+
     return tasks;
   } catch (error) {
     console.error('Error force reloading tasks:', error);
@@ -1515,7 +1746,7 @@ export const getTasksSummary = async (): Promise<{ dayNumber: number; title: str
   try {
     const tasksQuery = query(collection(db, 'tasks'), orderBy('dayNumber'));
     const snapshot = await getDocs(tasksQuery);
-    
+
     return snapshot.docs.map(doc => {
       const data = doc.data() as Task;
       return {

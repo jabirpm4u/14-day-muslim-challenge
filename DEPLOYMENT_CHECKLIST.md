@@ -13,8 +13,8 @@
 1. Go to **[GitHub.com](https://github.com)** and sign in
 2. Click **"New repository"** (green button)
 3. Repository settings:
-   - **Name**: `14-day-muslim-challenge`
-   - **Description**: `14-Day Proud Muslim Challenge - A React/Firebase app for Islamic personal development`
+   - **Name**: `focus-challenge`
+   - **Description**: `Focus Challenge - A React/Firebase app for Islamic personal development`
    - **Visibility**: Public (recommended) or Private
    - **DON'T** check "Add README", ".gitignore", or "license" (we already have these)
 4. Click **"Create repository"**
@@ -40,7 +40,7 @@ firebase init hosting:github --project focus-challenge2
 ```
 
 When prompted, enter:
-- **Repository**: `your-username/14-day-muslim-challenge`
+- **Repository**: `your-username/focus-challenge`
 - **Deploy on merge to main**: **Yes**
 - **Deploy on PR**: **Yes**
 

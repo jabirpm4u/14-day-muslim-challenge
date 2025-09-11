@@ -7,8 +7,8 @@ This guide will help you set up automatic deployment from GitHub to Firebase Hos
 ### Step 1: Create GitHub Repository
 
 1. **Go to [GitHub](https://github.com) and create a new repository:**
-   - Repository name: `14-day-muslim-challenge` (or your preferred name)
-   - Description: "14-Day Proud Muslim Challenge - A React/Firebase app for Islamic personal development"
+   - Repository name: `focus-challenge` (or your preferred name)
+   - Description: "Focus Challenge - A React/Firebase app for Islamic personal development"
    - Make it **Public** or **Private** (your choice)
    - **DON'T** initialize with README, .gitignore, or license (we already have these)
    - Click **"Create repository"**
@@ -19,7 +19,7 @@ Run these commands in your terminal:
 
 ```bash
 # Add GitHub remote (replace 'your-username' with your actual GitHub username)
-git remote add origin https://github.com/your-username/14-day-muslim-challenge.git
+git remote add origin https://github.com/your-username/focus-challenge.git
 
 # Push your code to GitHub
 git push -u origin main
@@ -33,7 +33,7 @@ firebase init hosting:github --project focus-challenge2
 ```
 
 When prompted:
-- **Repository format**: `your-username/14-day-muslim-challenge`
+- **Repository format**: `your-username/focus-challenge`
 - **Deploy on merge**: Yes (for main branch)
 - **Deploy on PR**: Yes (for preview deployments)
 
