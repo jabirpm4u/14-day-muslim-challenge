@@ -719,6 +719,23 @@ export const getUserProgress = async (userId: string): Promise<UserRole | null> 
 
 // Challenge Settings Functions
 
+// Helper function to get current IST date
+export const getCurrentISTDate = (): Date => {
+  const now = new Date();
+  const istString = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+  const istDate = new Date(istString);
+  console.log("🌏 getCurrentISTDate called - Original:", now, "IST:", istDate, "IST String:", istString);
+  return istDate;
+};
+
+// Helper function to convert any date to IST
+export const convertToIST = (date: Date): Date => {
+  const istString = date.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+  const istDate = new Date(istString);
+  console.log("🌏 convertToIST called - Original:", date, "IST:", istDate, "IST String:", istString);
+  return istDate;
+};
+
 // Helper function to generate challenge days with proper date tracking
 const generateChallengeDays = (startDate: Date, dayDuration: number): ChallengeDay[] => {
   const days: ChallengeDay[] = [];
