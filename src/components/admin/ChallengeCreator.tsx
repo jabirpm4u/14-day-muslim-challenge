@@ -6,9 +6,7 @@ import {
 } from '../../firebase/firestore';
 import { 
   Calendar, 
-  Play, 
   Save, 
-  Clock,
   Target,
   AlertTriangle,
   CheckCircle

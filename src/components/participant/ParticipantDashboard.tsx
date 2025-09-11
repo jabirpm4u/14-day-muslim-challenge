@@ -7,10 +7,11 @@ import {
   subscribeToParticipants,
   updateUserProgress,
   advanceToNextDay,
-  Task, 
-  ChallengeSettings, 
+  Task,
+  ChallengeSettings,
   UserProgress,
-  checkAndStartChallenge
+  checkAndStartChallenge,
+  calculateActualAvailableTasks
 } from "../../firebase/firestore";
 import { UserRole } from "../../firebase/auth";
 import Leaderboard from "../ui/Leaderboard";
@@ -434,9 +435,14 @@ const ParticipantDashboard: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [allParticipants, setAllParticipants] = useState<UserProgress[]>([]);
+  const [dayEndsAt, setDayEndsAt] = useState<Date | null>(null);
+  const [timeLeftDisplay, setTimeLeftDisplay] = useState<string>("");
 
-  // Calculate total challenge days
-  const totalChallengeDays = challengeSettings?.challengeDays?.length || 0;
+  // Calculate total available tasks based on actual challenge structure
+  const totalChallengeDays = React.useMemo(() => {
+    if (!challengeSettings || !tasks.length) return 0;
+    return calculateActualAvailableTasks(challengeSettings, tasks);
+  }, [challengeSettings, tasks]);
 
   // Check if challenge should start immediately when participant dashboard loads
   useEffect(() => {
@@ -469,6 +475,47 @@ const ParticipantDashboard: React.FC = () => {
     });
     return unsubscribe;
   }, []);
+
+  // Inline countdown to end of current local day (00:00 – 23:59 criterion)
+  useEffect(() => {
+    const getNextMidnight = (): Date => {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 0, 0);
+      return next;
+    };
+
+    const formatHMS = (ms: number): string => {
+      if (ms <= 0) return "00:00:00";
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    };
+
+    const update = () => {
+      const endsAt = dayEndsAt ?? getNextMidnight();
+      if (!dayEndsAt) setDayEndsAt(endsAt);
+      const now = new Date();
+      const diff = endsAt.getTime() - now.getTime();
+      setTimeLeftDisplay(formatHMS(diff));
+      if (diff <= 0) {
+        // Day rolled; schedule new midnight and refresh display
+        const next = getNextMidnight();
+        setDayEndsAt(next);
+        setTimeLeftDisplay(formatHMS(next.getTime() - new Date().getTime()));
+      }
+    };
+
+    // Only show/update when challenge is active and not paused
+    if (challengeSettings?.isActive && !challengeSettings?.isPaused) {
+      update();
+      const id = window.setInterval(update, 1000);
+      return () => window.clearInterval(id);
+    }
+  }, [challengeSettings, dayEndsAt]);
 
   // Load tasks based on challenge settings
   useEffect(() => {
@@ -1114,11 +1161,18 @@ const ParticipantDashboard: React.FC = () => {
                     <div className="mb-2 mt-1">
                       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-2 shadow-lg relative overflow-hidden">
                         <div className="absolute inset-0 bg-white/10" />
-                        <div className="relative text-white text-center flex items-center justify-center space-x-2">
+                        <div className="relative text-white flex items-center justify-between px-2">
+                          <div className="flex items-center space-x-2">
                           <CalendarDays className="w-4 h-4 text-white" />
                           <div className="text-xs font-bold text-white">
                             Tracking: {getTrackingDateForDay(getCurrentDayInfo().currentDay)}
                           </div>
+                        </div>
+                          {challengeSettings?.isActive && !challengeSettings?.isPaused && (
+                            <div className="text-[10px] sm:text-xs font-semibold bg-white/15 border border-white/20 rounded-md px-2 py-1">
+                              Ends in {timeLeftDisplay || '—'}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

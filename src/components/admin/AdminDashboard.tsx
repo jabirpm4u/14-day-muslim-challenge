@@ -9,7 +9,8 @@ import {
   UserProgress,
   getAllTasks,
   Task,
-  checkAndStartChallenge
+  checkAndStartChallenge,
+  calculateActualAvailableTasks
 } from '../../firebase/firestore';
 import AdminSettings from './AdminSettings';
 import ChallengeManagement from './ChallengeManagement';
@@ -362,8 +363,13 @@ const AdminDashboard: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Calculate statistics
-  const totalChallengeDays = challengeSettings?.challengeDays?.length || 0;
+  // Calculate statistics - use actual available tasks count
+  const totalAvailableTasks = React.useMemo(() => {
+    if (!challengeSettings || !allTasks.length) return 0;
+    return calculateActualAvailableTasks(challengeSettings, allTasks);
+  }, [challengeSettings, allTasks]);
+  
+  const totalChallengeDays = totalAvailableTasks;
   const stats = {
     totalParticipants: participants.length,
     activeParticipants: participants.filter(p => p.completedTasks > 0).length,

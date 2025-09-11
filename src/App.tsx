@@ -273,7 +273,9 @@ const AppRoutes: React.FC = () => {
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            <RoleBasedRoute allowedRole="participant" />
+            {challengeSettings && !challengeSettings.isActive
+              ? <Landing challengeSettings={challengeSettings} />
+              : <RoleBasedRoute allowedRole="participant" />}
           </ProtectedRoute>
         } 
       />

@@ -422,15 +422,17 @@ export const subscribeToTasks = (callback: (tasks: Task[]) => void) => {
 // Get all participants (users with role 'participant')
 export const getParticipants = async (): Promise<UserProgress[]> => {
   try {
-    const usersQuery = query(
-      collection(db, 'users'),
-      where('role', '==', 'participant')
-    );
-    const snapshot = await getDocs(usersQuery);
+    const [usersSnapshot, allTasks] = await Promise.all([
+      getDocs(query(
+        collection(db, 'users'),
+        where('role', '==', 'participant')
+      )),
+      getAllTasks()
+    ]);
 
-    return snapshot.docs.map(doc => {
+    return usersSnapshot.docs.map(doc => {
       const data = doc.data() as UserRole;
-      const completedTasks = Object.values(data.progress).filter(Boolean).length;
+      const completedTasks = calculateCompletedTasksExcludingDay0(data.progress || {}, allTasks);
 
       return {
         userId: doc.id,
@@ -457,26 +459,34 @@ export const subscribeToParticipants = (callback: (participants: UserProgress[])
     where('role', '==', 'participant')
   );
 
-  return onSnapshot(usersQuery, (snapshot) => {
-    const participants = snapshot.docs.map(doc => {
-      const data = doc.data() as UserRole;
-      // Safely handle progress field
-      const progress = data.progress || {};
-      const completedTasks = Object.values(progress).filter(Boolean).length;
+  return onSnapshot(usersQuery, async (snapshot) => {
+    try {
+      // Load tasks to filter out day 0 tasks
+      const allTasks = await getAllTasks();
 
-      return {
-        userId: doc.id,
-        name: data.name,
-        email: data.email,
-        progress: progress,
-        points: data.points || {},
-        totalPoints: data.totalPoints || 0,
-        completedTasks,
-        joinedAt: data.joinedAt,
-        rank: data.rank || 0
-      };
-    });
-    callback(participants);
+      const participants = snapshot.docs.map(doc => {
+        const data = doc.data() as UserRole;
+        // Safely handle progress field
+        const progress = data.progress || {};
+        const completedTasks = calculateCompletedTasksExcludingDay0(progress, allTasks);
+
+        return {
+          userId: doc.id,
+          name: data.name,
+          email: data.email,
+          progress: progress,
+          points: data.points || {},
+          totalPoints: data.totalPoints || 0,
+          completedTasks,
+          joinedAt: data.joinedAt,
+          rank: data.rank || 0
+        };
+      });
+      callback(participants);
+    } catch (error) {
+      console.error('Error in subscribeToParticipants:', error);
+      callback([]);
+    }
   });
 };
 
@@ -839,6 +849,60 @@ const generateChallengeDays = (startDate: Date, endDate: Date, dayDuration: numb
   }
 
   return days;
+};
+
+// Helper function to calculate completed tasks excluding day 0 tasks
+export const calculateCompletedTasksExcludingDay0 = (progress: Record<string, boolean>, allTasks: Task[]): number => {
+  if (!progress || !allTasks.length) return 0;
+
+  // Get task IDs for day 0 tasks
+  const day0TaskIds = new Set(allTasks.filter(task => task.dayNumber === 0).map(task => task.id));
+
+  // Count completed tasks excluding day 0 tasks
+  const completedCount = Object.entries(progress).filter(([taskId, isCompleted]) => {
+    return isCompleted && !day0TaskIds.has(taskId);
+  }).length;
+
+  return completedCount;
+};
+
+// Helper function to calculate actual available tasks based on challenge structure
+// Note: dayNumber 0 tasks are NEVER included in total/completed counts
+export const calculateActualAvailableTasks = (settings: ChallengeSettings, allTasks: Task[]): number => {
+  if (!settings.challengeDays || settings.challengeDays.length === 0) {
+    return 0;
+  }
+
+  // Get the actual day numbers that are part of this challenge
+  const challengeDayNumbers = settings.challengeDays.map(day => day.dayNumber);
+
+  // Always start from day 1 - never include day 0 tasks in counts
+  const actualStartDay = 1;
+  const maxDayNumber = Math.max(...challengeDayNumbers);
+
+  // Filter tasks that are within the actual challenge range (excluding day 0)
+  const availableTasks = allTasks.filter(task => {
+    // Task must be day 1 or higher and exist in challenge days
+    return task.dayNumber >= actualStartDay &&
+      task.dayNumber <= maxDayNumber &&
+      challengeDayNumbers.includes(task.dayNumber);
+  });
+
+  console.log('📊 Centralized Task Count Calculation (Excluding Day 0):', {
+    trialEnabled: settings.trialEnabled,
+    actualStartDay,
+    maxDayNumber,
+    challengeDayNumbers: challengeDayNumbers.sort((a, b) => a - b),
+    totalTasksInDB: allTasks.length,
+    availableTasksCount: availableTasks.length,
+    excludedDay0Tasks: allTasks.filter(task => task.dayNumber === 0).length,
+    tasksByDay: availableTasks.reduce((acc, task) => {
+      acc[task.dayNumber] = (acc[task.dayNumber] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>)
+  });
+
+  return availableTasks.length;
 };
 
 // Helper function to calculate current day based on elapsed time
@@ -1451,26 +1515,44 @@ export const updateLeaderboard = async (): Promise<void> => {
 // Get leaderboard
 export const getLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   try {
-    const usersQuery = query(
-      collection(db, 'users'),
-      where('role', '==', 'participant'),
-      orderBy('totalPoints', 'desc'),
-      orderBy('completedTasks', 'desc')
-    );
-    const snapshot = await getDocs(usersQuery);
+    const [usersSnapshot, allTasks] = await Promise.all([
+      getDocs(query(
+        collection(db, 'users'),
+        where('role', '==', 'participant'),
+        orderBy('totalPoints', 'desc')
+      )),
+      getAllTasks()
+    ]);
 
-    return snapshot.docs.map((doc, index) => {
+    const leaderboardEntries = usersSnapshot.docs.map((doc) => {
       const data = doc.data() as UserRole;
+      const completedTasks = calculateCompletedTasksExcludingDay0(data.progress || {}, allTasks);
+
       return {
         userId: doc.id,
         name: data.name,
         email: data.email,
         totalPoints: data.totalPoints || 0,
-        completedTasks: Object.values(data.progress).filter(Boolean).length,
-        rank: index + 1,
+        completedTasks,
+        rank: 0, // Will be set after sorting
         lastUpdated: data.updatedAt || data.joinedAt
       };
     });
+
+    // Sort by total points first, then by completed tasks
+    leaderboardEntries.sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      return b.completedTasks - a.completedTasks;
+    });
+
+    // Assign ranks
+    leaderboardEntries.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
+
+    return leaderboardEntries;
   } catch (error) {
     console.error('Error getting leaderboard:', error);
     return [];
@@ -1490,51 +1572,58 @@ export const subscribeToLeaderboard = (callback: (leaderboard: LeaderboardEntry[
       isEmpty: snapshot.empty
     });
 
-    const participants = snapshot.docs.map(doc => {
-      const data = doc.data() as UserRole;
-      console.log('📝 Processing user:', {
-        id: doc.id,
-        name: data.name,
-        role: data.role,
-        progressKeys: Object.keys(data.progress || {}),
-        totalPoints: data.totalPoints
+    try {
+      // Load tasks to filter out day 0 tasks
+      const allTasks = await getAllTasks();
+
+      const participants = snapshot.docs.map(doc => {
+        const data = doc.data() as UserRole;
+        console.log('📝 Processing user:', {
+          id: doc.id,
+          name: data.name,
+          role: data.role,
+          progressKeys: Object.keys(data.progress || {}),
+          totalPoints: data.totalPoints
+        });
+
+        const progress = data.progress || {};
+        const completedTasks = calculateCompletedTasksExcludingDay0(progress, allTasks);
+
+        return {
+          userId: doc.id,
+          name: data.name,
+          email: data.email,
+          totalPoints: data.totalPoints || 0,
+          completedTasks,
+          rank: 0, // Will be assigned based on sorted order
+          lastUpdated: data.updatedAt || data.joinedAt
+        };
       });
 
-      const progress = data.progress || {};
-      const completedTasks = Object.values(progress).filter(Boolean).length;
+      // Sort by total points, then by completed tasks
+      const sortedParticipants = participants.sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) {
+          return b.totalPoints - a.totalPoints;
+        }
+        return b.completedTasks - a.completedTasks;
+      });
 
-      return {
-        userId: doc.id,
-        name: data.name,
-        email: data.email,
-        totalPoints: data.totalPoints || 0,
-        completedTasks,
-        rank: 0, // Will be assigned based on sorted order
-        lastUpdated: data.updatedAt || data.joinedAt
-      };
-    });
+      // Assign ranks based on sorted order
+      const rankedParticipants = sortedParticipants.map((participant, index) => ({
+        ...participant,
+        rank: index + 1
+      }));
 
+      console.log('🏆 Leaderboard data (excluding day 0):', {
+        totalParticipants: rankedParticipants.length,
+        topParticipants: rankedParticipants.slice(0, 3).map(p => ({ name: p.name, points: p.totalPoints, completedTasks: p.completedTasks, rank: p.rank }))
+      });
 
-    // Sort by total points, then by completed tasks
-    const sortedParticipants = participants.sort((a, b) => {
-      if (b.totalPoints !== a.totalPoints) {
-        return b.totalPoints - a.totalPoints;
-      }
-      return b.completedTasks - a.completedTasks;
-    });
-
-    // Assign ranks based on sorted order
-    const rankedParticipants = sortedParticipants.map((participant, index) => ({
-      ...participant,
-      rank: index + 1
-    }));
-
-    console.log('🏆 Leaderboard data:', {
-      totalParticipants: rankedParticipants.length,
-      topParticipants: rankedParticipants.slice(0, 3).map(p => ({ name: p.name, points: p.totalPoints, rank: p.rank }))
-    });
-
-    callback(rankedParticipants);
+      callback(rankedParticipants);
+    } catch (error) {
+      console.error('Error in subscribeToLeaderboard:', error);
+      callback([]);
+    }
   });
 };
 

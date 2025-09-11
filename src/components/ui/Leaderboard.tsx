@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { subscribeToLeaderboard, LeaderboardEntry } from '../../firebase/firestore';
+import { subscribeToLeaderboard, LeaderboardEntry, getChallengeSettings, getAllTasks, calculateActualAvailableTasks } from '../../firebase/firestore';
 import { Trophy, Crown, Medal, Award, User } from 'lucide-react';
 
 interface LeaderboardProps {
@@ -8,11 +8,34 @@ interface LeaderboardProps {
   disableInternalScrolling?: boolean; // Add this prop
 }
 
+
+
 const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 10, disableInternalScrolling = false }) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [totalAvailableTasks, setTotalAvailableTasks] = useState(0);
+
   useEffect(() => {
+    const loadChallengeData = async () => {
+      try {
+        const [settings, allTasks] = await Promise.all([
+          getChallengeSettings(),
+          getAllTasks()
+        ]);
+        
+        // Calculate total available tasks based on actual challenge structure
+        if (settings && allTasks.length > 0) {
+          const totalTasks = calculateActualAvailableTasks(settings, allTasks);
+          setTotalAvailableTasks(totalTasks);
+        }
+      } catch (error) {
+        console.error('Error loading challenge data:', error);
+      }
+    };
+
+    loadChallengeData();
+
     const unsubscribe = subscribeToLeaderboard((data) => {
       console.log('📊 Leaderboard component received data:', {
         totalEntries: data.length,
@@ -203,7 +226,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 
                             {entry.totalPoints} pts
                           </span>
                           <span className="text-xs text-gray-500">
-                            {entry.completedTasks}/15 tasks
+                            {entry.completedTasks}/{totalAvailableTasks} tasks
                           </span>
                         </div>
                       </div>

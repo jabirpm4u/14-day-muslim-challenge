@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AlertTriangle, 
   Trophy, 
@@ -15,7 +15,7 @@ import {
   CheckCircle,
   TrendingUp
 } from 'lucide-react';
-import { ChallengeSettings, UserProgress } from '../../firebase/firestore';
+import { ChallengeSettings, UserProgress, getAllTasks, calculateActualAvailableTasks } from '../../firebase/firestore';
 
 interface ChallengeStoppedProps {
   challengeSettings: ChallengeSettings;
@@ -34,13 +34,36 @@ const ChallengeStopped: React.FC<ChallengeStoppedProps> = ({
   onViewOverview,
   onViewLeaderboard
 }) => {
+
+  const [totalAvailableTasks, setTotalAvailableTasks] = useState(0);
+
+
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const allTasks = await getAllTasks();
+        
+        // Calculate total available tasks based on actual challenge structure
+        if (challengeSettings && allTasks.length > 0) {
+          const totalTasks = calculateActualAvailableTasks(challengeSettings, allTasks);
+          setTotalAvailableTasks(totalTasks);
+        }
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+      }
+    };
+
+    loadTasks();
+  }, [challengeSettings]);
+
   // Calculate statistics
   const totalParticipants = participants.length;
   const activeParticipants = participants.filter(p => p.completedTasks > 0).length;
   const averageProgress = participants.length > 0 
     ? Math.round(participants.reduce((sum, p) => sum + p.completedTasks, 0) / participants.length)
     : 0;
-  const totalTasks = challengeSettings.challengeDays?.length || 0;
+  const totalTasks = totalAvailableTasks;
   const completedChallenges = participants.filter(p => p.completedTasks === totalTasks).length;
 
   // Get top 3 participants
