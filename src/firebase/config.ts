@@ -1,7 +1,7 @@
 // Firebase configuration
 // Replace these values with your actual Firebase project configuration
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -19,6 +19,16 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
+// Ensure auth state persists across tabs/reloads to avoid first-click failures
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error('Failed to set auth persistence', err);
+});
+// Use device/browser language for auth UI
+try {
+  // Some environments might not support useDeviceLanguage; guard just in case
+  // @ts-ignore - method exists on Auth instance
+  auth.useDeviceLanguage?.();
+} catch (_) {}
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 

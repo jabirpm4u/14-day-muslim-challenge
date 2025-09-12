@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
 
     return unsubscribe;
-  }, [userRole]); // Add userRole to dependencies
+  }, []); // Subscribe once on mount to avoid double subscriptions
 
   const signIn = async () => {
     try {
