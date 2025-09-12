@@ -8,13 +8,17 @@ const Login: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log('🖱️ Login button clicked');
       setIsSigningIn(true);
+      console.log('🖱️ Calling signIn...');
       await signIn();
+      console.log('🖱️ signIn completed');
       // Don't set loading to false here - let AuthContext handle it
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       alert('Login failed. Please try again.');
     } finally {
+      console.log('🖱️ Setting isSigningIn to false');
       setIsSigningIn(false);
     }
   };

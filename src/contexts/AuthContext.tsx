@@ -82,62 +82,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChange(async (user) => {
+      console.log('🔄 Auth state changed:', user ? `User: ${user.uid}` : 'No user');
       setUser(user);
       
       if (user) {
-        // Only fetch user role if we don't already have it
-        // This prevents unnecessary API calls during sign-in
-        if (!userRole) {
-          try {
-            const roleData = await getCurrentUserRole();
-            if (roleData) {
-              setUserRole(roleData);
-            } else {
-              // Fallback: assume participant if role doc missing
-              setUserRole({
-                uid: user.uid,
-                name: user.displayName || 'User',
-                email: user.email || '',
-                role: 'participant',
-                joinedAt: null,
-                progress: {},
-                points: {},
-                totalPoints: 0,
-                rank: 0,
-                updatedAt: null
-              } as unknown as UserRole);
-            }
-          } catch (error) {
-            console.error('Error getting user role:', error);
-            // Fallback on error as participant to prevent lock on loading screen
-            if (user) {
-              setUserRole({
-                uid: user.uid,
-                name: user.displayName || 'User',
-                email: user.email || '',
-                role: 'participant',
-                joinedAt: null,
-                progress: {},
-                points: {},
-                totalPoints: 0,
-                rank: 0,
-                updatedAt: null
-              } as unknown as UserRole);
-            } else {
-              setUserRole(null);
-            }
+        console.log('👤 User authenticated, fetching role data...');
+        try {
+          const roleData = await getCurrentUserRole();
+          console.log('📋 Role data fetched:', roleData);
+          if (roleData) {
+            setUserRole(roleData);
+          } else {
+            console.log('⚠️ No role data found, creating fallback participant role');
+            // Fallback: assume participant if role doc missing
+            setUserRole({
+              uid: user.uid,
+              name: user.displayName || 'User',
+              email: user.email || '',
+              role: 'participant',
+              joinedAt: null,
+              progress: {},
+              points: {},
+              totalPoints: 0,
+              rank: 0,
+              updatedAt: null
+            } as unknown as UserRole);
           }
+        } catch (error) {
+          console.error('❌ Error getting user role:', error);
+          // Fallback on error as participant to prevent lock on loading screen
+          console.log('🔄 Creating fallback participant role due to error');
+          setUserRole({
+            uid: user.uid,
+            name: user.displayName || 'User',
+            email: user.email || '',
+            role: 'participant',
+            joinedAt: null,
+            progress: {},
+            points: {},
+            totalPoints: 0,
+            rank: 0,
+            updatedAt: null
+          } as unknown as UserRole);
         }
       } else {
+        console.log('🚪 No user, clearing role data');
         setUserRole(null);
       }
       
+      console.log('✅ Setting loading to false');
       setLoading(false);
       
       // Clear refresh flag on successful auth resolution
-      if (!loading) {
-        sessionStorage.removeItem('auth-refreshed');
-      }
+      sessionStorage.removeItem('auth-refreshed');
     });
 
     return unsubscribe;
@@ -145,15 +142,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async () => {
     try {
+      console.log('🔐 SignIn called, setting loading to true');
       setLoading(true);
+      
+      console.log('🔐 Calling signInWithGoogle...');
       const userRoleData = await signInWithGoogle();
+      console.log('🔐 signInWithGoogle returned:', userRoleData);
+      
       // Set user role immediately if we got it from signInWithGoogle
       if (userRoleData) {
+        console.log('🔐 Setting user role immediately:', userRoleData);
         setUserRole(userRoleData);
       }
-      // The onAuthStateChange will handle setting the user and update loading state
+      
+      // Don't set loading to false here - let onAuthStateChange handle it
+      console.log('🔐 SignIn completed, waiting for auth state change...');
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('❌ Sign in error:', error);
       setLoading(false);
       throw error;
     }
