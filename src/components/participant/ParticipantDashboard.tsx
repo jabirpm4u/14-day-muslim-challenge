@@ -6,7 +6,6 @@ import {
   subscribeToChallengeSettings,
   subscribeToParticipants,
   updateUserProgress,
-  advanceToNextDay,
   Task,
   ChallengeSettings,
   UserProgress,
@@ -30,7 +29,6 @@ import {
   Award,
   BookOpen,
   Target,
-  CalendarDays,
   Pause,
   RotateCcw,
 } from "lucide-react";
@@ -113,10 +111,9 @@ const CompactTaskCard: React.FC<{
         }
 
         // Call parent handler
-
         onToggle(
           task.id,
-          task.id, // Use task.id as the key instead of dayNumber
+          task.id, // Use task ID as the unique key
           !localIsCompleted,
           task.points
         );
@@ -299,7 +296,7 @@ const PremiumHeader: React.FC<{
   const getTabTitle = () => {
     switch (currentTab) {
       case "challenges":
-        return "Daily Tasks";
+        return "Daily Tasks"; // Keep constant, don't change with date selection
       case "leaderboard":
         return "Leaderboard";
       case "profile":
@@ -323,38 +320,45 @@ const PremiumHeader: React.FC<{
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-50">
-      {/* Main Header */}
-      <div className="px-4 py-3">
+    <div className="bg-gradient-to-r from-white/98 to-blue-50/98 backdrop-blur-xl shadow-sm border-b border-blue-100/30 sticky top-0 z-50">
+      {/* Optimized Compact Header */}
+      <div className="px-3 py-3">
         <div className="flex items-center justify-between">
+          {/* Left side - App branding */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
               {getTabIcon()}
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-gray-800">
                 {getTabTitle()}
               </h1>
             </div>
           </div>
 
+          {/* Right side - Compact stats */}
           <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200/50">
-              <Star className="w-4 h-4 text-amber-500" />
+            {/* Compact Points Badge */}
+            <div className="flex items-center space-x-1.5 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 rounded-lg border border-amber-200/50">
+              <Star className="w-3.5 h-3.5 text-amber-500" />
               <span className="text-sm font-bold text-amber-700">
-                {totalPoints}
+                {totalPoints.toLocaleString()}
               </span>
             </div>
+            
+            {/* Compact Day Badge */}
             {challengeSettings?.isActive && (
-              <div className="bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
                 <span className="text-sm font-bold text-blue-700">
                   {challengeSettings.currentDay === 0 &&
                   challengeSettings.trialEnabled
-                    ? "Trial Day"
-                    : `Day ${challengeSettings.currentDay}`}
+                    ? "Trial"
+                    : `D${challengeSettings.currentDay}`}
                 </span>
               </div>
             )}
+            
+            {/* Compact Sign Out Button */}
             <button
               onClick={onSignOut}
               className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all duration-200"
@@ -364,6 +368,169 @@ const PremiumHeader: React.FC<{
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// World-Class Calendar-Style Date Strip
+const DateStrip: React.FC<{
+  challengeSettings: ChallengeSettings | null;
+  selectedDate: Date;
+  onDateSelect: (date: Date) => void;
+  timeLeftDisplay?: string;
+}> = ({ challengeSettings, selectedDate, onDateSelect, timeLeftDisplay }) => {
+  
+  // Generate available dates based on challenge schedule
+  const getAvailableDates = () => {
+    if (!challengeSettings?.challengeDays || challengeSettings.challengeDays.length === 0) {
+      return [];
+    }
+
+    const today = new Date();
+    const dates: Array<{
+      date: Date;
+      dayNumber: number;
+      isScheduled: boolean;
+      isLocked: boolean;
+      isToday: boolean;
+      isPast: boolean;
+      isFuture: boolean;
+    }> = [];
+
+    // Get all challenge days and sort by day number
+    const sortedChallengeDays = [...challengeSettings.challengeDays].sort((a, b) => a.dayNumber - b.dayNumber);
+    
+    sortedChallengeDays.forEach((challengeDay) => {
+      if (challengeDay.scheduledDate) {
+        const scheduledDate = challengeDay.scheduledDate.toDate();
+        const dayStart = new Date(scheduledDate);
+        dayStart.setHours(0, 0, 0, 0);
+        
+        const todayStart = new Date(today);
+        todayStart.setHours(0, 0, 0, 0);
+        
+        const isToday = dayStart.getTime() === todayStart.getTime();
+        const isPast = dayStart.getTime() < todayStart.getTime();
+        const isFuture = dayStart.getTime() > todayStart.getTime();
+        const daysDiff = Math.floor((todayStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000));
+        
+        // Show all dates but with different lock states
+        const isLocked = daysDiff > 1 || isFuture; // More than 1 day ago or future = locked
+        
+        dates.push({
+          date: dayStart,
+          dayNumber: challengeDay.dayNumber,
+          isScheduled: true,
+          isLocked,
+          isToday,
+          isPast,
+          isFuture
+        });
+      }
+    });
+
+    return dates.sort((a, b) => a.date.getTime() - b.date.getTime());
+  };
+
+  const availableDates = getAvailableDates();
+  const today = new Date();
+
+  const formatDayNumber = (date: Date) => {
+    return date.getDate().toString();
+  };
+
+  const formatDayName = (date: Date) => {
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    
+    if (isToday) return 'Today';
+    if (isYesterday) return 'Yesterday';
+    
+    return date.toLocaleDateString("en-US", { weekday: "short" });
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-xl border-b border-blue-100/50 px-3 py-1.5">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="flex items-center space-x-1.5 min-w-max px-2">
+          {availableDates.map((dateInfo) => {
+            const isSelected = dateInfo.date.toDateString() === selectedDate.toDateString();
+            const isToday = dateInfo.isToday;
+            
+            return (
+              <button
+                key={dateInfo.date.toDateString()}
+                onClick={() => !dateInfo.isLocked && onDateSelect(dateInfo.date)}
+                disabled={dateInfo.isLocked}
+                className={`relative flex flex-col items-center px-2.5 py-1.5 rounded-lg transition-all duration-300 min-w-[50px] ${
+                  dateInfo.isLocked
+                    ? 'opacity-50 cursor-not-allowed bg-gray-100/50'
+                    : isSelected
+                    ? 'bg-gradient-to-b from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50 transform scale-105'
+                    : 'hover:bg-white/60 hover:shadow-md transform hover:scale-105'
+                }`}
+              >
+                {/* Lock icon for locked dates */}
+                {dateInfo.isLocked && (
+                  <Lock className="w-3 h-3 text-gray-400 absolute top-1 right-1" />
+                )}
+                
+                {/* Day number */}
+                <span className={`text-base font-bold ${
+                  dateInfo.isLocked 
+                    ? 'text-gray-400' 
+                    : isSelected 
+                    ? 'text-white' 
+                    : isToday 
+                    ? 'text-blue-600' 
+                    : 'text-gray-700'
+                }`}>
+                  {formatDayNumber(dateInfo.date)}
+                </span>
+                
+                {/* Day name */}
+                <span className={`text-xs font-medium ${
+                  dateInfo.isLocked 
+                    ? 'text-gray-400' 
+                    : isSelected 
+                    ? 'text-blue-100' 
+                    : isToday 
+                    ? 'text-blue-600' 
+                    : 'text-gray-500'
+                }`}>
+                  {formatDayName(dateInfo.date)}
+                </span>
+                
+                {/* Removed challenge day indicator for cleaner look */}
+                
+                {/* Today indicator dot */}
+                {isToday && !isSelected && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                )}
+                
+                {/* Selection indicator */}
+                {isSelected && (
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* Countdown timer for today only */}
+      {timeLeftDisplay && selectedDate.toDateString() === today.toDateString() && challengeSettings?.isActive && !challengeSettings?.isPaused && (
+        <div className="flex items-center justify-center mt-2">
+          <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-50 to-red-50 px-3 py-1.5 rounded-full border border-orange-200/50 shadow-sm">
+            <Clock className="w-3 h-3 text-orange-500" />
+            <span className="text-xs font-semibold text-orange-700">
+              {timeLeftDisplay} remaining
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -462,6 +629,10 @@ const ParticipantDashboard: React.FC = () => {
   const [allParticipants, setAllParticipants] = useState<UserProgress[]>([]);
   const [dayEndsAt, setDayEndsAt] = useState<Date | null>(null);
   const [timeLeftDisplay, setTimeLeftDisplay] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    // Initialize with today's date, will be updated when challenge settings load
+    return new Date();
+  });
 
   // Calculate total available tasks based on actual challenge structure
   const totalChallengeDays = React.useMemo(() => {
@@ -602,83 +773,54 @@ const ParticipantDashboard: React.FC = () => {
     }
   }, [user]);
 
-  // Compute expected current day based on 00:00-23:59 local day windows
-  const computeExpectedCurrentDay = useCallback(
-    (settings: ChallengeSettings, now: Date): number => {
-      // Prefer startDate/dayDuration if present
-      if (settings.startDate && settings.dayDuration) {
-        const start = settings.startDate.toDate
-          ? settings.startDate.toDate()
-          : new Date(settings.startDate);
-        const elapsedMs = now.getTime() - start.getTime();
-        const dayLengthMs = settings.dayDuration * 60 * 60 * 1000;
-        const passed = Math.floor(elapsedMs / dayLengthMs);
-        return Math.min(Math.max(passed, 0), 14);
-      }
-
-      // Fallback: derive from challengeDays scheduledDate (date-only compare)
-      if (settings.challengeDays && settings.challengeDays.length > 0) {
-        let maxActive = 0;
-        for (const d of settings.challengeDays) {
-          const scheduled = d.scheduledDate?.toDate
-            ? d.scheduledDate.toDate()
-            : new Date(d.scheduledDate);
-          if (scheduled.getTime() <= now.getTime()) {
-            maxActive = Math.max(maxActive, d.dayNumber);
-          }
-        }
-        return Math.min(Math.max(maxActive, 0), 14);
-      }
-
-      return settings.currentDay || 0;
-    },
-    []
-  );
-
-  // Ensure currentDay auto-aligns at app load and on midnight rollover
+  // Update selectedDate when challenge settings change
   useEffect(() => {
-    const alignDayIfNeeded = async () => {
-      if (
-        !challengeSettings ||
-        !challengeSettings.isActive ||
-        challengeSettings.isPaused
-      )
-        return;
-      const now = new Date();
-      const expected = computeExpectedCurrentDay(challengeSettings, now);
-      if (expected > challengeSettings.currentDay) {
-        try {
-          // Advance stepwise to ensure task activation/deactivation logic runs
-          for (let d = challengeSettings.currentDay; d < expected; d++) {
-            await advanceToNextDay(d);
-          }
-        } catch (e) {
-          console.error("Auto-advance failed:", e);
+    if (challengeSettings?.challengeDays && challengeSettings.challengeDays.length > 0) {
+      // Find today's challenge day or the closest available day
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // First try to find today's scheduled day
+      const todaysDay = challengeSettings.challengeDays.find(day => {
+        if (day.scheduledDate) {
+          const scheduledDate = day.scheduledDate.toDate();
+          const scheduledDateStart = new Date(scheduledDate);
+          scheduledDateStart.setHours(0, 0, 0, 0);
+          return scheduledDateStart.getTime() === today.getTime();
+        }
+        return false;
+      });
+
+      if (todaysDay && todaysDay.scheduledDate) {
+        setSelectedDate(todaysDay.scheduledDate.toDate());
+      } else {
+        // If no exact match, find the current day based on currentDay
+        const currentChallengeDay = challengeSettings.challengeDays.find(
+          day => day.dayNumber === challengeSettings.currentDay
+        );
+        
+        if (currentChallengeDay && currentChallengeDay.scheduledDate) {
+          setSelectedDate(currentChallengeDay.scheduledDate.toDate());
         }
       }
-    };
-
-    alignDayIfNeeded();
-
-    // Schedule a check at next local midnight
-    const scheduleNextMidnight = () => {
-      const now = new Date();
-      const nextMidnight = new Date(now);
-      nextMidnight.setHours(24, 0, 0, 0);
-      return window.setTimeout(() => {
-        alignDayIfNeeded();
-      }, nextMidnight.getTime() - now.getTime());
-    };
-
-    let midnightTimer: number | null = null;
-    if (challengeSettings?.isActive && !challengeSettings?.isPaused) {
-      midnightTimer = scheduleNextMidnight();
     }
+  }, [challengeSettings]);
 
-    return () => {
-      if (midnightTimer) window.clearTimeout(midnightTimer);
-    };
-  }, [challengeSettings, computeExpectedCurrentDay]);
+
+
+  // Note: Auto-advance functionality disabled to prevent Firestore errors
+  // Manual day advancement should be done through admin panel
+  useEffect(() => {
+    // This effect is intentionally minimal to avoid auto-advance issues
+    if (!challengeSettings?.isActive) return;
+    
+    // Just log the current state without making changes
+    console.log('Challenge state:', {
+      currentDay: challengeSettings.currentDay,
+      isActive: challengeSettings.isActive,
+      isPaused: challengeSettings.isPaused
+    });
+  }, [challengeSettings]);
 
   const handleTaskToggle = useCallback(
     async (
@@ -730,10 +872,9 @@ const ParticipantDashboard: React.FC = () => {
       !challengeSettings?.challengeDays ||
       challengeSettings.challengeDays.length === 0
     ) {
-      // Fallback: calculate tracking date as yesterday
+      // Fallback: calculate tracking date as today
       const today = new Date();
-      const trackingDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-      return trackingDate.toLocaleDateString("en-US", {
+      return today.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       });
@@ -758,8 +899,7 @@ const ParticipantDashboard: React.FC = () => {
 
     // Default fallback
     const today = new Date();
-    const trackingDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    return trackingDate.toLocaleDateString("en-US", {
+    return today.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     });
@@ -788,46 +928,107 @@ const ParticipantDashboard: React.FC = () => {
     return true;
   };
 
-  // Check if a task is unlocked/available
+  // Check if a task is unlocked/editable for the selected date
   const isTaskUnlocked = (task: Task): boolean => {
     if (!challengeSettings) return false;
     if (!challengeSettings.isActive) return false;
     if (challengeSettings.isPaused) return false;
-    if (!hasChallengeStarted()) return false; // NEW: Check if challenge has actually started
+    if (!hasChallengeStarted()) return false;
 
-    // If trial days are disabled, do not consider day 0 tasks for participants
+    // Skip day 0 tasks if trial is disabled
     if (!challengeSettings.trialEnabled && task.dayNumber === 0) {
       return false;
     }
 
-    // If trial days are enabled, day 0 tasks are always available when current day is 0
-    if (challengeSettings.trialEnabled && task.dayNumber === 0) {
-      return challengeSettings.currentDay >= 0;
+    const today = new Date();
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const selectedDateStart = new Date(selectedDate);
+    selectedDateStart.setHours(0, 0, 0, 0);
+    
+    const daysDiff = Math.floor((todayStart.getTime() - selectedDateStart.getTime()) / (24 * 60 * 60 * 1000));
+    const isFuture = selectedDateStart.getTime() > todayStart.getTime();
+    
+    // Lock future dates and dates more than 1 day ago
+    if (isFuture || daysDiff > 1) {
+      return false;
     }
 
-    return task.dayNumber <= challengeSettings.currentDay;
+    // Find the challenge day that matches the selected date
+    const matchingChallengeDay = challengeSettings.challengeDays?.find(day => {
+      if (day.scheduledDate) {
+        const scheduledDate = day.scheduledDate.toDate();
+        const scheduledDateStart = new Date(scheduledDate);
+        scheduledDateStart.setHours(0, 0, 0, 0);
+        return scheduledDateStart.getTime() === selectedDateStart.getTime();
+      }
+      return false;
+    });
+
+    if (!matchingChallengeDay) {
+      return false;
+    }
+
+    // Allow editing only if within the allowed time range and day is unlocked in challenge
+    return task.dayNumber === matchingChallengeDay.dayNumber && 
+           task.dayNumber <= challengeSettings.currentDay;
   };
 
-  // Filter tasks to show only current day's tasks
+  // Show tasks for selected date (always show all tasks, control editability separately)
   const getCurrentDayTasks = (): Task[] => {
-    if (!challengeSettings) return [];
-    if (!challengeSettings.isActive) return [];
-    if (challengeSettings.isPaused) return [];
-    if (!hasChallengeStarted()) return []; // NEW: Check if challenge has actually started
-
-    // If trial days are disabled, do not consider day 0 tasks for participants
-    if (!challengeSettings.trialEnabled) {
-      // Skip day 0 tasks entirely when trial is disabled
-      return tasks.filter(
-        (task) =>
-          task.dayNumber === challengeSettings.currentDay && task.dayNumber > 0
-      );
+    if (!challengeSettings) {
+      console.log('No challenge settings');
+      return [];
+    }
+    if (!challengeSettings.isActive) {
+      console.log('Challenge not active');
+      return [];
+    }
+    if (challengeSettings.isPaused) {
+      console.log('Challenge paused');
+      return [];
+    }
+    if (!hasChallengeStarted()) {
+      console.log('Challenge not started');
+      return [];
     }
 
-    // If trial days are enabled, show trial day (day 0) if current day is 0, otherwise show current day tasks
-    const targetDay =
-      challengeSettings.currentDay === 0 ? 0 : challengeSettings.currentDay;
-    return tasks.filter((task) => task.dayNumber === targetDay);
+    // Find the challenge day that matches the selected date
+    const selectedDateStart = new Date(selectedDate);
+    selectedDateStart.setHours(0, 0, 0, 0);
+
+    const matchingChallengeDay = challengeSettings.challengeDays?.find(day => {
+      if (day.scheduledDate) {
+        const scheduledDate = day.scheduledDate.toDate();
+        const scheduledDateStart = new Date(scheduledDate);
+        scheduledDateStart.setHours(0, 0, 0, 0);
+        return scheduledDateStart.getTime() === selectedDateStart.getTime();
+      }
+      return false;
+    });
+
+    if (!matchingChallengeDay) {
+      console.log('No matching challenge day for selected date');
+      return [];
+    }
+
+    const targetDay = matchingChallengeDay.dayNumber;
+
+    console.log('Target day for filtering:', targetDay, 'for date:', selectedDate.toDateString());
+
+    const filteredTasks = tasks.filter((task) => {
+      // Skip day 0 tasks if trial is disabled
+      if (!challengeSettings.trialEnabled && task.dayNumber === 0) {
+        return false;
+      }
+      
+      return task.dayNumber === targetDay;
+    });
+
+    console.log('Filtered tasks:', filteredTasks.length, 'tasks for day', targetDay);
+    
+    return filteredTasks;
   };
 
   const handleTaskClick = (task: Task) => {
@@ -1221,7 +1422,7 @@ const ParticipantDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+    <div className="min-h-screen h-[100dvh] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" />
@@ -1243,173 +1444,233 @@ const ParticipantDashboard: React.FC = () => {
           challengeSettings={challengeSettings}
           onSignOut={signOut}
         />
+        
+        {/* Date Strip - only show on challenges tab */}
+        {currentTab === "challenges" && challengeSettings?.isActive && (
+          <DateStrip
+            challengeSettings={challengeSettings}
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            timeLeftDisplay={timeLeftDisplay}
+          />
+        )}
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="pt-18 pb-20 min-h-[calc(100dvh-4.5rem)] overflow-y-auto">
+      <div className="pt-36 pb-24 min-h-[calc(100dvh-4.5rem)] overflow-y-auto">
         {currentTab === "challenges" && (
           <div className="px-3 pt-0 pb-3">
-            {/* Optimized Tasks Container */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+            {/* Beautiful Tasks Container */}
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-white/60 shadow-xl shadow-blue-100/20 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/20 to-indigo-50/30" />
 
               <div className="p-4 pt-4">
-                {/* Day Tracking Card - Only for Challenges Tab */}
-                <div className="mb-2 mt-1">
-                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-2 shadow-lg relative overflow-hidden">
-                    <div className="absolute inset-0 bg-white/10" />
-                    <div className="relative text-white flex items-center justify-between px-2">
+                {/* Scrollable content area including header and tasks */}
+                <div
+                  className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                  style={{ maxHeight: "calc(100dvh - 240px)" }}
+                >
+                  {/* Compact Task Header - now inside scrollable area */}
+                  <div className="mb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-10 py-2 -mx-4 px-4 border-b border-gray-100/50">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <CalendarDays className="w-4 h-4 text-white" />
-                        <div className="text-xs font-bold text-white">
-                          Tracking:{" "}
-                          {getTrackingDateForDay(
-                            getCurrentDayInfo().currentDay
-                          )}
+                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                          <Target className="w-3 h-3 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-gray-800">
+                            {(() => {
+                              // Find the challenge day that matches the selected date
+                              const selectedDateStart = new Date(selectedDate);
+                              selectedDateStart.setHours(0, 0, 0, 0);
+
+                              const matchingChallengeDay = challengeSettings?.challengeDays?.find(day => {
+                                if (day.scheduledDate) {
+                                  const scheduledDate = day.scheduledDate.toDate();
+                                  const scheduledDateStart = new Date(scheduledDate);
+                                  scheduledDateStart.setHours(0, 0, 0, 0);
+                                  return scheduledDateStart.getTime() === selectedDateStart.getTime();
+                                }
+                                return false;
+                              });
+
+                              if (matchingChallengeDay) {
+                                return matchingChallengeDay.dayNumber === 0 && challengeSettings?.trialEnabled
+                                  ? "Trial Day Tasks"
+                                  : `Day ${matchingChallengeDay.dayNumber} Tasks`;
+                              }
+                              
+                              return "Tasks";
+                            })()}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {currentDayCompletedTasks} of {currentDayTasks.length} completed
+                          </p>
                         </div>
                       </div>
-                      {challengeSettings?.isActive &&
-                        !challengeSettings?.isPaused && (
-                          <div className="text-[10px] sm:text-xs font-semibold bg-white/15 border border-white/20 rounded-md px-2 py-1">
-                            Ends in {timeLeftDisplay || "—"}
-                          </div>
-                        )}
+                      
+                      {/* Compact Progress Circle */}
+                      <div className="relative w-12 h-12">
+                        <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="20"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            className="text-gray-200"
+                          />
+                          <circle
+                            cx="24"
+                            cy="24"
+                            r="20"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            strokeDasharray={`${2 * Math.PI * 20}`}
+                            strokeDashoffset={`${2 * Math.PI * 20 * (1 - progressPercentage / 100)}`}
+                            className="text-blue-500 transition-all duration-500"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-600">
+                            {Math.round(progressPercentage)}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Task List Header with Progress */}
-                <div className="mb-4 pb-3 border-b border-gray-200/50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">
-                        {getCurrentDayInfo().isTrialDay
-                          ? "Trial Day Tasks"
-                          : `Day ${getCurrentDayInfo().currentDay} Tasks`}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {currentDayCompletedTasks} of {currentDayTasks.length}{" "}
-                        completed
+                  {/* Task List */}
+                  {tasksLoading ? (
+                    <div className="space-y-3 pb-4">
+                      {[...Array(6)].map((_, index) => (
+                        <div key={index} className="animate-pulse">
+                          <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-3 h-16">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gray-300 rounded-xl" />
+                              <div className="flex-1 space-y-1">
+                                <div className="h-3 bg-gray-300 rounded w-3/4" />
+                                <div className="h-2 bg-gray-300 rounded w-1/2" />
+                              </div>
+                              <div className="w-8 h-8 bg-gray-300 rounded-xl" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : getCurrentDayTasks().length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                        <BookOpen className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h4 className="text-base font-bold text-gray-700 mb-1">
+                        No Tasks Today
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {challengeSettings?.currentDay === 0
+                          ? "Trial day tasks coming soon"
+                          : `Day ${challengeSettings?.currentDay} tasks loading...`}
                       </p>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-16 h-2 bg-gray-200 rounded-full">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
-                          style={{ width: `${progressPercentage}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-bold text-blue-600">
-                        {Math.round(progressPercentage)}%
-                      </span>
+                  ) : (
+                    <div className="space-y-3 pb-4">
+                      {getCurrentDayTasks()
+                        .sort((a, b) => {
+                          const ai =
+                            (a as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
+                          const bi =
+                            (b as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
+                          if (ai !== bi) return ai - bi;
+                          return a.title.localeCompare(b.title);
+                        })
+                        .map((task, index) => {
+                          // Use task-specific key for progress tracking (task ID + day number)
+                          const taskKey = `${task.id}`;
+                          const isCompleted =
+                            userProgress?.progress?.[taskKey] === true;
+
+                          const uniqueTaskKey = `${task.id}-${taskKey}`;
+                          const isUpdating = updatingTask === uniqueTaskKey;
+                          const isUnlocked = isTaskUnlocked(task);
+                          const cardUniqueKey = `card-${task.id}-${
+                            task.dayNumber
+                          }-${task.title.replace(/\s+/g, "-")}-${
+                            isCompleted ? "completed" : "incomplete"
+                          }`;
+
+                          return (
+                            <CompactTaskCard
+                              key={cardUniqueKey}
+                              task={task}
+                              isCompleted={isCompleted}
+                              isUnlocked={isUnlocked}
+                              onToggle={handleTaskToggle}
+                              isUpdating={isUpdating}
+                              onClick={() => handleTaskClick(task)}
+                              sequenceNumber={index}
+                              trackingDate={getTrackingDateForDay(task.dayNumber)}
+                            />
+                          );
+                        })}
                     </div>
-                  </div>
+                  )}
                 </div>
-
-                {tasksLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(6)].map((_, index) => (
-                      <div key={index} className="animate-pulse">
-                        <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-3 h-16">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gray-300 rounded-xl" />
-                            <div className="flex-1 space-y-1">
-                              <div className="h-3 bg-gray-300 rounded w-3/4" />
-                              <div className="h-2 bg-gray-300 rounded w-1/2" />
-                            </div>
-                            <div className="w-8 h-8 bg-gray-300 rounded-xl" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : getCurrentDayTasks().length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                      <BookOpen className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h4 className="text-base font-bold text-gray-700 mb-1">
-                      No Tasks Today
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      {challengeSettings?.currentDay === 0
-                        ? "Trial day tasks coming soon"
-                        : `Day ${challengeSettings?.currentDay} tasks loading...`}
-                    </p>
-                  </div>
-                ) : (
-                  <div
-                    className="space-y-3 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-                    style={{ maxHeight: "calc(100dvh - 280px)" }}
-                  >
-                    {getCurrentDayTasks()
-                      .sort((a, b) => {
-                        const ai =
-                          (a as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
-                        const bi =
-                          (b as any).sortIndex ?? Number.MAX_SAFE_INTEGER;
-                        if (ai !== bi) return ai - bi;
-                        return a.title.localeCompare(b.title);
-                      })
-                      .map((task, index) => {
-                        // Fix: Use task.id as the key instead of dayNumber
-                        const taskKey = task.id;
-                        const isCompleted =
-                          userProgress?.progress?.[taskKey] === true;
-
-                        const uniqueTaskKey = `${task.id}-${taskKey}`;
-                        const isUpdating = updatingTask === uniqueTaskKey;
-                        const isUnlocked = isTaskUnlocked(task);
-                        const cardUniqueKey = `card-${task.id}-${
-                          task.dayNumber
-                        }-${task.title.replace(/\s+/g, "-")}-${
-                          isCompleted ? "completed" : "incomplete"
-                        }`;
-
-                        return (
-                          <CompactTaskCard
-                            key={cardUniqueKey}
-                            task={task}
-                            isCompleted={isCompleted}
-                            isUnlocked={isUnlocked}
-                            onToggle={handleTaskToggle}
-                            isUpdating={isUpdating}
-                            onClick={() => handleTaskClick(task)}
-                            sequenceNumber={index}
-                            trackingDate={getTrackingDateForDay(task.dayNumber)}
-                          />
-                        );
-                      })}
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
 
         {currentTab === "leaderboard" && (
-          <div className="px-3 py-3">
+          <div className="px-3 pb-3">
             {/* Leaderboard Container */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-white/60 shadow-xl shadow-blue-100/20 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/20 to-indigo-50/30" />
 
-              <div
-                className="p-4 overflow-y-auto"
-                style={{ maxHeight: "calc(100dvh - 180px)" }}
-              >
-                <Leaderboard className="shadow-none" maxEntries={50} />
+              <div className="p-4 relative">
+                {/* Leaderboard Header */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 rounded-xl flex items-center justify-center shadow-md">
+                        <Trophy className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h1 className="text-lg font-bold text-gray-800">
+                          Leaderboard
+                        </h1>
+                        <p className="text-xs text-gray-500">
+                          Live rankings updated in real-time
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 rounded-lg border border-amber-200/50">
+                      <span className="text-xs font-bold text-amber-700">Live</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scrollable Leaderboard */}
+                <div
+                  className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                  style={{ maxHeight: "calc(100dvh - 280px)" }}
+                >
+                  <Leaderboard className="shadow-none" maxEntries={50} />
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {currentTab === "profile" && (
-          <div className="px-3 py-3">
+          <div className="px-3 pb-3">
             {/* Profile Container */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-white/60 shadow-xl shadow-blue-100/20 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/20 to-indigo-50/30" />
 
-              <div className="p-4">
+              <div className="p-4 relative">
                 <div className="space-y-4">
                   {/* Compact Profile Header */}
                   <div className="bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">

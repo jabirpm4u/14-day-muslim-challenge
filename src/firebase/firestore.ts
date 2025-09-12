@@ -844,8 +844,8 @@ const generateChallengeDaysFromCount = (startDate: Date, totalDays: number, dayD
     const dayNumber = startingDay + i; // Start from the specified starting day
     const scheduledDate = new Date(startDate.getTime() + (i * dayDuration * 60 * 60 * 1000));
 
-    // Tracking date is the day before the scheduled date (yesterday's tracking)
-    const trackingDate = new Date(scheduledDate.getTime() - (24 * 60 * 60 * 1000));
+    // Tracking date is now the same as scheduled date (tracking current day)
+    const trackingDate = new Date(scheduledDate.getTime());
 
     days.push({
       dayNumber,
@@ -869,8 +869,8 @@ const generateChallengeDays = (startDate: Date, endDate: Date, dayDuration: numb
     const dayNumber = startingDay + i; // Start from the specified starting day
     const scheduledDate = new Date(startDate.getTime() + (i * dayDuration * 60 * 60 * 1000));
 
-    // Tracking date is the day before the scheduled date (yesterday's tracking)
-    const trackingDate = new Date(scheduledDate.getTime() - (24 * 60 * 60 * 1000));
+    // Tracking date is now the same as scheduled date (tracking current day)
+    const trackingDate = new Date(scheduledDate.getTime());
 
     days.push({
       dayNumber,
@@ -959,16 +959,19 @@ const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: numbe
   const updatedDays = [...originalDays];
 
   // Update remaining days starting from the paused day
-  for (let i = pausedDay; i <= 14; i++) {
-    const dayOffset = i - pausedDay;
-    const newScheduledDate = new Date(resumeDate.getTime() + (dayOffset * dayDuration * 60 * 60 * 1000));
-    const newTrackingDate = new Date(newScheduledDate.getTime() - (24 * 60 * 60 * 1000));
+  for (let i = pausedDay; i < updatedDays.length; i++) {
+    // Only update days that exist in the original array
+    if (updatedDays[i]) {
+      const dayOffset = i - pausedDay;
+      const newScheduledDate = new Date(resumeDate.getTime() + (dayOffset * dayDuration * 60 * 60 * 1000));
+      const newTrackingDate = new Date(newScheduledDate.getTime());
 
-    updatedDays[i] = {
-      ...updatedDays[i],
-      scheduledDate: Timestamp.fromDate(newScheduledDate),
-      trackingDate: Timestamp.fromDate(newTrackingDate)
-    };
+      updatedDays[i] = {
+        ...updatedDays[i],
+        scheduledDate: Timestamp.fromDate(newScheduledDate),
+        trackingDate: Timestamp.fromDate(newTrackingDate)
+      };
+    }
   }
 
   return updatedDays;
@@ -1039,6 +1042,11 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
 
     const settingsRef = doc(db, 'settings', 'challenge');
 
+    // Filter out undefined values to prevent Firebase errors
+    const cleanSettings = Object.fromEntries(
+      Object.entries(settings).filter(([_, value]) => value !== undefined)
+    );
+
     // Check if document exists first
     console.log('🔄 UPDATE SETTINGS: Checking if document exists...');
     const currentDoc = await getDoc(settingsRef);
@@ -1059,14 +1067,14 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
         challengeDays: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        ...settings
+        ...cleanSettings
       };
       await setDoc(settingsRef, defaultSettings);
       console.log('🔄 UPDATE SETTINGS: Document created successfully');
     } else {
       console.log('🔄 UPDATE SETTINGS: Updating existing challenge settings...');
       const updateData = {
-        ...settings,
+        ...cleanSettings,
         updatedAt: serverTimestamp()
       };
       console.log('🔄 UPDATE SETTINGS: Update data:', updateData);
@@ -1269,8 +1277,24 @@ export const resumeChallenge = async (): Promise<void> => {
 
     // Get current settings to calculate where we left off
     const currentSettings = await getChallengeSettings();
-    if (!currentSettings || !currentSettings.isPaused || !currentSettings.pausedAt) {
+    if (!currentSettings) {
+      throw new Error('Challenge settings not found');
+    }
+    
+    if (!currentSettings.isPaused) {
       throw new Error('Challenge is not currently paused');
+    }
+    
+    if (!currentSettings.pausedAt) {
+      throw new Error('Pause timestamp not found');
+    }
+    
+    if (!currentSettings.startDate) {
+      throw new Error('Challenge start date not found');
+    }
+    
+    if (!currentSettings.challengeDays || currentSettings.challengeDays.length === 0) {
+      throw new Error('Challenge days not configured');
     }
 
     const resumeDate = new Date();
@@ -1295,6 +1319,11 @@ export const resumeChallenge = async (): Promise<void> => {
       console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
     });
 
+    // Validate the updated challenge days
+    if (!updatedChallengeDays || updatedChallengeDays.length === 0) {
+      throw new Error('Failed to recalculate challenge days');
+    }
+
     const settings: Partial<ChallengeSettings> = {
       isPaused: false,
       resumedAt: serverTimestamp(),
@@ -1303,6 +1332,8 @@ export const resumeChallenge = async (): Promise<void> => {
     };
 
     console.log(`Resuming challenge from Day ${pausedDay}...`);
+    console.log('Settings to update:', JSON.stringify(settings, null, 2));
+    
     await updateChallengeSettings(settings);
 
     // Activate current day tasks
