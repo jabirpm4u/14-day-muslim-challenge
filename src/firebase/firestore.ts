@@ -1391,6 +1391,106 @@ export const advanceToNextDay = async (currentDay: number): Promise<void> => {
   }
 };
 
+// Set challenge to a specific day (supports both forward and backward movement)
+export const setChallengeDay = async (targetDay: number): Promise<void> => {
+  try {
+    const settings = await getChallengeSettings();
+    if (!settings) {
+      throw new Error('Challenge settings not found');
+    }
+
+    const totalDays = settings.challengeDays.length;
+    const currentDay = settings.currentDay || 0;
+
+    // Validate target day
+    if (targetDay < 0 || targetDay >= totalDays) {
+      throw new Error(`Invalid day number: ${targetDay}. Must be between 0 and ${totalDays - 1}`);
+    }
+
+    if (targetDay === currentDay) {
+      console.log(`ℹ️ Already on day ${targetDay}, no change needed`);
+      return;
+    }
+
+    console.log(`🔄 Setting challenge day from ${currentDay} to ${targetDay}`);
+
+    // Deactivate all current tasks
+    const allTasksQuery = query(collection(db, 'tasks'));
+    const allTasksSnapshot = await getDocs(allTasksQuery);
+    
+    const batch = writeBatch(db);
+    allTasksSnapshot.docs.forEach(taskDoc => {
+      batch.update(taskDoc.ref, { isActive: false });
+    });
+
+    // Activate only tasks for the target day
+    const targetTasksQuery = query(collection(db, 'tasks'), where('dayNumber', '==', targetDay));
+    const targetTasksSnapshot = await getDocs(targetTasksQuery);
+    
+    targetTasksSnapshot.docs.forEach(taskDoc => {
+      batch.update(taskDoc.ref, { isActive: true });
+    });
+
+    await batch.commit();
+
+    // Update challenge settings
+    await updateChallengeSettings({ currentDay: targetDay });
+    
+    console.log(`✅ Successfully set challenge day to ${targetDay}`);
+  } catch (error) {
+    console.error('Error setting challenge day:', error);
+    throw error;
+  }
+};
+
+// Go back to the previous day
+export const goToPreviousDay = async (currentDay: number): Promise<void> => {
+  try {
+    const previousDay = currentDay - 1;
+
+    // Validate that we're not going below day 0
+    if (previousDay < 0) {
+      throw new Error('Cannot go back further. Already on the first day.');
+    }
+
+    // Get current challenge settings to check total days
+    const settings = await getChallengeSettings();
+    if (!settings) {
+      throw new Error('Challenge settings not found');
+    }
+
+    // Deactivate current day tasks
+    if (currentDay >= 0) {
+      const currentTasksQuery = query(collection(db, 'tasks'), where('dayNumber', '==', currentDay));
+      const currentTasksSnapshot = await getDocs(currentTasksQuery);
+
+      const batch = writeBatch(db);
+      currentTasksSnapshot.docs.forEach(taskDoc => {
+        batch.update(taskDoc.ref, { isActive: false });
+      });
+      await batch.commit();
+    }
+
+    // Activate previous day tasks
+    const previousTasksQuery = query(collection(db, 'tasks'), where('dayNumber', '==', previousDay));
+    const previousTasksSnapshot = await getDocs(previousTasksQuery);
+
+    const batch = writeBatch(db);
+    previousTasksSnapshot.docs.forEach(taskDoc => {
+      batch.update(taskDoc.ref, { isActive: true });
+    });
+    await batch.commit();
+
+    // Update challenge settings
+    await updateChallengeSettings({ currentDay: previousDay });
+    
+    console.log(`✅ Successfully went back to day ${previousDay}`);
+  } catch (error) {
+    console.error('Error going back to previous day:', error);
+    throw error;
+  }
+};
+
 // Set scheduled start and end dates for the challenge
 export const setScheduledDates = async (startDate: Date, endDate: Date, totalChallengeDays?: number): Promise<void> => {
   try {
@@ -1463,35 +1563,53 @@ export const checkAndStartChallenge = async (): Promise<boolean> => {
         }
       }
 
+      console.log('Challenge reactivated successfully!');
       return true;
     }
 
-    if (!settings.scheduledStartDate) {
-      return false; // No scheduled start date
-    }
-
+    // Check if the current date is within the scheduled start and end dates
     const now = new Date();
-    const scheduledStart = settings.scheduledStartDate.toDate();
+    if (now >= settings.scheduledStartDate.toDate() && now <= settings.scheduledEndDate.toDate()) {
+      console.log('Starting challenge automatically based on scheduled date...');
 
-    // Check if scheduled start time has passed (with 1 minute tolerance for exact timing)
-    const timeDiff = now.getTime() - scheduledStart.getTime();
-    const oneMinute = 60 * 1000;
+      // Generate challenge days based on the scheduled start and end dates
+      const challengeDays = generateChallengeDays(
+        settings.scheduledStartDate.toDate(),
+        settings.scheduledEndDate.toDate(),
+        24,
+        settings.challengeDays.length > 0 ? settings.challengeDays[0].dayNumber : 0
+      );
 
-    // If scheduled time has passed (even by hours or days), start the challenge
-    if (timeDiff >= -oneMinute) { // Allow 1 minute early start
-      console.log('Scheduled start time has passed, starting challenge automatically...');
-      console.log('Scheduled start:', scheduledStart.toLocaleString());
-      console.log('Current time:', now.toLocaleString());
-      console.log('Time difference (minutes):', Math.round(timeDiff / (60 * 1000)));
+      const settingsUpdate: Partial<ChallengeSettings> = {
+        isActive: true,
+        startDate: serverTimestamp(),
+        challengeDays,
+        updatedAt: serverTimestamp()
+      };
 
-      await startChallenge();
+      await updateChallengeSettings(settingsUpdate);
+
+      // Activate tasks for the first day
+      const firstDayTasks = query(collection(db, 'tasks'), where('dayNumber', '==', 0));
+      const firstTasksSnapshot = await getDocs(firstDayTasks);
+
+      if (!firstTasksSnapshot.empty) {
+        const batch = writeBatch(db);
+        firstTasksSnapshot.docs.forEach(taskDoc => {
+          batch.update(taskDoc.ref, { isActive: true });
+        });
+        await batch.commit();
+        console.log('Day 0 tasks activated successfully');
+      }
+
+      console.log('Challenge started successfully!');
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error('Error checking scheduled start:', error);
-    return false;
+    console.error('Error checking and starting challenge:', error);
+    throw error;
   }
 };
 

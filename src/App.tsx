@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import Landing from './components/ui/Landing';
-import { subscribeToChallengeSettings, ChallengeSettings, advanceToNextDay, getCurrentISTDate, convertToIST, checkAndStartChallenge, checkAndEndChallenge } from './firebase/firestore';
+import { subscribeToChallengeSettings, ChallengeSettings, advanceToNextDay, setChallengeDay, getCurrentISTDate, convertToIST, checkAndStartChallenge, checkAndEndChallenge } from './firebase/firestore';
 
 // Lazy load admin and participant dashboards for better performance
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
@@ -210,20 +210,26 @@ const AppRoutes: React.FC = () => {
         const maxDays = challengeSettings.challengeDays.length;
         const cappedExpectedDay = Math.min(expectedDay, maxDays - 1);
         
-        if (cappedExpectedDay > challengeSettings.currentDay) {
-          console.log(`🚀 IST Day Advancement: Advancing from day ${challengeSettings.currentDay} to day ${cappedExpectedDay} on ${istDateString}`);
+        if (cappedExpectedDay !== challengeSettings.currentDay) {
+          console.log(`🚀 IST Day Adjustment: Adjusting from day ${challengeSettings.currentDay} to day ${cappedExpectedDay} on ${istDateString}`);
           
-          // Advance stepwise to ensure task activation/deactivation logic runs
-          for (let d = challengeSettings.currentDay; d < cappedExpectedDay; d++) {
-            console.log(`  → Advancing to day ${d + 1}...`);
-            await advanceToNextDay(d);
+          if (cappedExpectedDay > challengeSettings.currentDay) {
+            // Advance forward stepwise
+            for (let d = challengeSettings.currentDay; d < cappedExpectedDay; d++) {
+              console.log(`  → Advancing to day ${d + 1}...`);
+              await advanceToNextDay(d);
+            }
+          } else {
+            // Go backward - use the new setChallengeDay function
+            console.log(`  ← Going backward to day ${cappedExpectedDay}...`);
+            await setChallengeDay(cappedExpectedDay);
           }
           
           // Mark today as advanced
           localStorage.setItem(lastAdvancementKey, istDateString);
-          console.log(`✅ Day advancement completed for ${istDateString}`);
+          console.log(`✅ Day adjustment completed for ${istDateString}`);
         } else {
-          console.log(`ℹ️ No day advancement needed. Current: ${challengeSettings.currentDay}, Expected: ${cappedExpectedDay}`);
+          console.log(`ℹ️ No day adjustment needed. Current: ${challengeSettings.currentDay}, Expected: ${cappedExpectedDay}`);
         }
       } catch (e) {
         console.error("❌ Challenge management failed:", e);

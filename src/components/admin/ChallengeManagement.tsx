@@ -5,6 +5,7 @@ import {
   pauseChallenge,
   resumeChallenge,
   advanceToNextDay,
+  goToPreviousDay,
   ChallengeSettings
 } from '../../firebase/firestore';
 import ChallengeCreator from './ChallengeCreator';
@@ -12,6 +13,7 @@ import {
   Play, 
   Pause, 
   SkipForward, 
+  SkipBack,
   Target,
   Square
 } from 'lucide-react';
@@ -137,6 +139,25 @@ const ChallengeManagement: React.FC = () => {
     }
   };
 
+  const handleGoToPreviousDay = async () => {
+    if (!settings || !confirm('ℹ️ Are you sure you want to go back to the previous day?\n\nThis will:\n- Move to the previous challenge day\n- Activate tasks for the previous day\n- Deactivate current day tasks')) {
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      await goToPreviousDay(settings.currentDay);
+      await loadData();
+      
+      alert(`✅ Successfully went back to Day ${(settings?.currentDay || 0) - 1}!`);
+    } catch (error) {
+      console.error('Error going back to previous day:', error);
+      alert('❌ Error going back to previous day. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 border border-islamic-light">
@@ -176,7 +197,7 @@ const ChallengeManagement: React.FC = () => {
         </div>
 
         {/* Challenge Control Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Pause/Resume Button */}
           {!settings?.isPaused ? (
             <button
@@ -197,6 +218,23 @@ const ChallengeManagement: React.FC = () => {
             >
               <Play className="w-4 h-4" />
               <span>{saving ? "Resuming..." : "Resume Challenge"}</span>
+            </button>
+          )}
+
+          {/* Go to Previous Day - Only show when not paused and not on day 0 */}
+          {!settings?.isPaused && settings?.currentDay > 0 && (
+            <button
+              onClick={handleGoToPreviousDay}
+              disabled={saving || !settings?.isActive || settings?.isPaused || settings?.currentDay <= 0}
+              className="bg-islamic-primary hover:bg-islamic-secondary text-white py-3 px-4 rounded-lg 
+                       flex items-center justify-center space-x-2 disabled:opacity-50 transition-colors"
+            >
+              <SkipBack className="w-4 h-4" />
+              <span>
+                {saving
+                  ? "Going back..."
+                  : `Go to Day ${(settings?.currentDay || 0) - 1}`}
+              </span>
             </button>
           )}
 
