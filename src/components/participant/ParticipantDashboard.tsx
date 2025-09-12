@@ -293,6 +293,7 @@ const PremiumHeader: React.FC<{
   challengeSettings: ChallengeSettings | null;
   onSignOut: () => void;
 }> = ({ currentTab, totalPoints, challengeSettings, onSignOut }) => {
+  const { isNinjaMode, originalAdminRole, exitNinjaMode } = useAuth();
   const getTabTitle = () => {
     switch (currentTab) {
       case "challenges":
@@ -321,6 +322,26 @@ const PremiumHeader: React.FC<{
 
   return (
     <div className="bg-gradient-to-r from-white/98 to-blue-50/98 backdrop-blur-xl shadow-sm border-b border-blue-100/30 sticky top-0 z-50">
+      {/* Ninja Mode Banner */}
+      {isNinjaMode && originalAdminRole && (
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">🥷</span>
+              <span className="text-sm font-medium">
+                Ninja Mode: Viewing as participant | Admin: {originalAdminRole.name}
+              </span>
+            </div>
+            <button
+              onClick={exitNinjaMode}
+              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors"
+            >
+              Exit Ninja Mode
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Optimized Compact Header */}
       <div className="px-3 py-3">
         <div className="flex items-center justify-between">

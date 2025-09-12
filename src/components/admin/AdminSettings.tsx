@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   getAllTasks,
   forceReloadTasks,
-  deleteAllParticipants,
   Task,
 } from "../../firebase/firestore";
 import TaskEditor from "./TaskEditor";
@@ -204,24 +203,7 @@ const AdminSettings: React.FC = () => {
               <Plus className="w-4 h-4" />
               <span>Add Task</span>
             </button>
-            <button
-              onClick={async () => {
-                if (!confirm('Are you sure you want to delete ALL participant users? This cannot be undone.')) return;
-                if (!confirm('Final confirmation: Delete ALL participants now?')) return;
-                try {
-                  const count = await deleteAllParticipants();
-                  alert(`Deleted ${count} participant user(s).`);
-                } catch (e) {
-                  alert('Failed to delete participants. Check console for details.');
-                  console.error(e);
-                }
-              }}
-              className="bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded-lg 
-                       flex items-center space-x-2 transition-colors"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span>Delete Participants</span>
-            </button>
+
           </div>
         </div>
 

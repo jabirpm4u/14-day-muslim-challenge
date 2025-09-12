@@ -32,7 +32,8 @@ import {
   Trash2,
   Eye,
   Target,
-  Plus
+  Plus,
+  User
 } from 'lucide-react';
 
 // Challenge Status Panel Component
@@ -225,7 +226,7 @@ const ChallengeStatusPanel: React.FC<{
 };
 
 const AdminDashboard: React.FC = () => {
-  const { userRole, signOut } = useAuth();
+  const { userRole, signOut, ninjaLogin } = useAuth();
   const [participants, setParticipants] = useState<UserProgress[]>([]);
   const [challengeSettings, setChallengeSettings] = useState<ChallengeSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -361,6 +362,32 @@ const AdminDashboard: React.FC = () => {
   const handleViewProgress = (participant: UserProgress) => {
     setSelectedParticipant(participant);
     setIsModalOpen(true);
+  };
+
+  const handleNinjaLogin = async (participantId: string, participantName: string) => {
+    const confirmNinja = window.confirm(
+      `🥷 Ninja Login\n\nYou are about to login as:\n${participantName}\n\nThis will:\n• Switch your view to their participant dashboard\n• Show their exact progress and tasks\n• Allow you to see what they see\n\nYou can return to admin mode anytime.\n\nProceed with ninja login?`
+    );
+    
+    if (!confirmNinja) {
+      return;
+    }
+
+    try {
+      console.log(`🥷 Admin initiating ninja login for participant: ${participantId} (${participantName})`);
+      
+      await ninjaLogin(participantId);
+      
+      // Redirect to participant dashboard
+      window.location.href = '/dashboard';
+      
+    } catch (error) {
+      console.error('❌ Ninja login failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      alert(`❌ Ninja Login Failed!\n\nError: ${errorMessage}\n\nPlease try again or check your admin permissions.`);
+    }
   };
 
   // Calculate statistics - use actual available tasks count
@@ -669,6 +696,16 @@ const AdminDashboard: React.FC = () => {
                                   >
                                     <Eye className="w-3 h-3" />
                                     <span>View</span>
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => handleNinjaLogin(participant.userId, participant.name)}
+                                    className="flex items-center space-x-1 px-3 py-1 bg-purple-50 hover:bg-purple-100 
+                                             text-purple-700 rounded-lg transition-colors duration-200 text-sm"
+                                    title="Login as this participant to see their dashboard"
+                                  >
+                                    <User className="w-3 h-3" />
+                                    <span>🥷</span>
                                   </button>
                                   
                                   <button

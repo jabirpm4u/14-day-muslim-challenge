@@ -103,3 +103,27 @@ export const getCurrentUserRole = async (): Promise<UserRole | null> => {
     return null;
   }
 };
+
+// Ninja login: Get participant role data for admin impersonation
+export const getParticipantRoleData = async (participantId: string): Promise<UserRole | null> => {
+  try {
+    const userDocRef = doc(db, 'users', participantId);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('Participant not found');
+    }
+    
+    const userData = userDoc.data() as UserRole;
+    
+    // Verify it's actually a participant
+    if (userData.role !== 'participant') {
+      throw new Error('User is not a participant');
+    }
+    
+    return userData;
+  } catch (error) {
+    console.error('Error getting participant role data:', error);
+    throw error;
+  }
+};

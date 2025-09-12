@@ -5,6 +5,7 @@ import {
   signOutUser, 
   onAuthStateChange, 
   getCurrentUserRole,
+  getParticipantRoleData,
   UserRole 
 } from '../firebase/auth';
 
@@ -13,8 +14,12 @@ interface AuthContextType {
   userRole: UserRole | null;
   loading: boolean;
   isRefreshing: boolean;
+  isNinjaMode: boolean;
+  originalAdminRole: UserRole | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  ninjaLogin: (participantId: string) => Promise<void>;
+  exitNinjaMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,8 +27,12 @@ const AuthContext = createContext<AuthContextType>({
   userRole: null,
   loading: true,
   isRefreshing: false,
+  isNinjaMode: false,
+  originalAdminRole: null,
   signIn: async () => {},
-  signOut: async () => {}
+  signOut: async () => {},
+  ninjaLogin: async () => {},
+  exitNinjaMode: () => {}
 });
 
 export const useAuth = () => {
@@ -44,6 +53,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [hasRefreshed, setHasRefreshed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Ninja mode states
+  const [isNinjaMode, setIsNinjaMode] = useState(false);
+  const [originalAdminRole, setOriginalAdminRole] = useState<UserRole | null>(null);
 
   // Emergency fallback: Auto-refresh if stuck loading on first visit
   useEffect(() => {
@@ -150,10 +163,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await signOutUser();
       setUserRole(null);
+      // Reset ninja mode on sign out
+      setIsNinjaMode(false);
+      setOriginalAdminRole(null);
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
     }
+  };
+
+  // Ninja login: Admin impersonates a participant
+  const ninjaLogin = async (participantId: string) => {
+    try {
+      if (!userRole || userRole.role !== 'admin') {
+        throw new Error('Only admins can use ninja login');
+      }
+
+      console.log(`🥷 Admin ${userRole.name} entering ninja mode as participant: ${participantId}`);
+      
+      // Get participant data
+      const participantData = await getParticipantRoleData(participantId);
+      
+      if (!participantData) {
+        throw new Error('Participant not found');
+      }
+
+      // Store original admin role
+      setOriginalAdminRole(userRole);
+      
+      // Switch to participant role
+      setUserRole(participantData);
+      setIsNinjaMode(true);
+      
+      console.log(`✅ Ninja mode activated - now viewing as: ${participantData.name}`);
+    } catch (error) {
+      console.error('❌ Ninja login failed:', error);
+      throw error;
+    }
+  };
+
+  // Exit ninja mode and return to admin
+  const exitNinjaMode = () => {
+    if (!isNinjaMode || !originalAdminRole) {
+      console.warn('Not in ninja mode or no original admin role stored');
+      return;
+    }
+
+    console.log(`🚪 Exiting ninja mode, returning to admin: ${originalAdminRole.name}`);
+    
+    // Restore original admin role
+    setUserRole(originalAdminRole);
+    setIsNinjaMode(false);
+    setOriginalAdminRole(null);
+    
+    console.log('✅ Returned to admin mode');
   };
 
   const value: AuthContextType = {
@@ -161,8 +224,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userRole,
     loading,
     isRefreshing,
+    isNinjaMode,
+    originalAdminRole,
     signIn,
-    signOut
+    signOut,
+    ninjaLogin,
+    exitNinjaMode
   };
 
   return (

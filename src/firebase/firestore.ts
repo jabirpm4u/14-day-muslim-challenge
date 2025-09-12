@@ -606,12 +606,13 @@ export const resetParticipantProgress = async (userId: string): Promise<void> =>
 
     console.log('📝 Updating user document with reset data...');
 
-    // Reset all progress and points
+    // Reset all progress and points - comprehensive reset
     await updateDoc(userRef, {
       progress: initialProgress,
       points: initialPoints,
       totalPoints: 0,
       rank: 0,
+      completedTasks: 0, // Ensure completed tasks count is reset
       updatedAt: serverTimestamp()
     });
 
