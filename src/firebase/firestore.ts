@@ -939,22 +939,6 @@ export const calculateActualAvailableTasks = (settings: ChallengeSettings, allTa
   return availableTasks.length;
 };
 
-// Helper function to calculate current day based on elapsed time
-const calculateCurrentDay = (startDate: Date, dayDuration: number, isPaused: boolean, pausedAt?: Date): number => {
-  if (isPaused && pausedAt) {
-    // If paused, calculate based on time until pause
-    const elapsed = pausedAt.getTime() - startDate.getTime();
-    const daysPassed = Math.floor(elapsed / (dayDuration * 60 * 60 * 1000));
-    return Math.min(Math.max(daysPassed, 0), 14);
-  }
-
-  // Calculate based on current time
-  const now = new Date();
-  const elapsed = now.getTime() - startDate.getTime();
-  const daysPassed = Math.floor(elapsed / (dayDuration * 60 * 60 * 1000));
-  return Math.min(Math.max(daysPassed, 0), 14);
-};
-
 // Helper function to ensure unique challenge days (no duplicate dates)
 const deduplicateChallengeDays = (challengeDays: ChallengeDay[]): ChallengeDay[] => {
   const seen = new Set<string>();
@@ -990,50 +974,21 @@ const deduplicateChallengeDays = (challengeDays: ChallengeDay[]): ChallengeDay[]
   return uniqueDays;
 };
 
-// Helper function to recalculate remaining days when resuming
-const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: number, resumeDate: Date, dayDuration: number): ChallengeDay[] => {
-  // Create a deep copy of the original days array
-  const updatedDays: ChallengeDay[] = originalDays.map(day => ({ ...day }));
-
-  // Update remaining days starting from the paused day
-  for (let i = pausedDay; i < updatedDays.length; i++) {
-    // Only update days that exist in the original array
-    if (updatedDays[i]) {
-      const dayOffset = i - pausedDay;
-      const newScheduledDate = new Date(resumeDate.getTime() + (dayOffset * dayDuration * 60 * 60 * 1000));
-      const newTrackingDate = new Date(newScheduledDate.getTime());
-
-      updatedDays[i] = {
-        ...updatedDays[i],
-        scheduledDate: Timestamp.fromDate(newScheduledDate),
-        trackingDate: Timestamp.fromDate(newTrackingDate)
-      };
-    }
-  }
-
-  // Ensure no duplicates after recalculation
-  const deduplicatedDays = deduplicateChallengeDays(updatedDays);
-  
-  // Additional validation: ensure all days have valid dates
-  return deduplicatedDays.filter(day => {
-    try {
-      return day.scheduledDate && 
-             typeof day.scheduledDate.toDate === 'function' && 
-             day.trackingDate && 
-             typeof day.trackingDate.toDate === 'function';
-    } catch (e) {
-      console.warn(`Invalid date in challenge day ${day.dayNumber}`, e);
-      return false;
-    }
-  });
-};
-
 // Initialize challenge settings with default values
 export const initializeChallengeSettings = async (): Promise<ChallengeSettings> => {
   try {
     console.log('Initializing challenge settings...');
 
     const settingsRef = doc(db, 'settings', 'challenge');
+    
+    // Check if settings already exist to prevent regeneration
+    const existingDoc = await getDoc(settingsRef);
+    if (existingDoc.exists()) {
+      console.log('Challenge settings already exist, returning existing settings');
+      return existingDoc.data() as ChallengeSettings;
+    }
+
+    // Only generate new challenge days if none exist
     const now = new Date();
     const defaultEndDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
     const challengeDays = generateChallengeDays(now, defaultEndDate, 24, 0); // Default to trial day
@@ -1044,8 +999,8 @@ export const initializeChallengeSettings = async (): Promise<ChallengeSettings> 
       isPaused: false,
       startDate: null,
       endDate: null,
-      scheduledStartDate: null,
-      scheduledEndDate: null,
+      scheduledStartDate: Timestamp.fromDate(now), // Store original start date
+      scheduledEndDate: Timestamp.fromDate(defaultEndDate),
       currentDay: 0,
       dayDuration: 24, // 24 hours
       trialEnabled: true,
@@ -1077,9 +1032,10 @@ export const getChallengeSettings = async (): Promise<ChallengeSettings | null> 
       return settingsDoc.data() as ChallengeSettings;
     }
 
-    // Create default settings if none exist
+    // Create default settings if none exist, but don't regenerate challenge days
     console.log('No challenge settings found, creating default...');
-    return await initializeChallengeSettings();
+    const defaultSettings = await initializeChallengeSettings();
+    return defaultSettings;
   } catch (error) {
     console.error('Error getting challenge settings:', error);
     return null;
@@ -1168,17 +1124,29 @@ export const startChallenge = async (): Promise<void> => {
       await initializeDefaultTasks();
     }
 
-    // Generate challenge dates starting from now
-    const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
-    const challengeDays = generateChallengeDays(startDate, endDate, 24, 0); // 24 hours per day, start from trial day
+    // Get existing settings to check if challenge days already exist
+    const existingSettings = await getChallengeSettings();
+    let challengeDays = existingSettings?.challengeDays;
+    let startDate = existingSettings?.scheduledStartDate?.toDate() || new Date();
+    let endDate = existingSettings?.scheduledEndDate?.toDate() || new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
 
-    console.log('Generated challenge schedule:');
-    challengeDays.forEach(day => {
-      const scheduledDate = day.scheduledDate.toDate();
-      const trackingDate = day.trackingDate.toDate();
-      console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
-    });
+    // Only generate new challenge days if none exist
+    if (!challengeDays || challengeDays.length === 0) {
+      console.log('No existing challenge days found, generating new schedule...');
+      const now = new Date();
+      endDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 days
+      challengeDays = generateChallengeDays(now, endDate, 24, 0); // 24 hours per day, start from trial day
+      startDate = now;
+
+      console.log('Generated challenge schedule:');
+      challengeDays.forEach(day => {
+        const scheduledDate = day.scheduledDate.toDate();
+        const trackingDate = day.trackingDate.toDate();
+        console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
+      });
+    } else {
+      console.log('Using existing challenge days, preserving original schedule');
+    }
 
     // Update challenge settings
     const settings: Partial<ChallengeSettings> = {
@@ -1330,12 +1298,12 @@ export const pauseChallenge = async (): Promise<void> => {
   }
 };
 
-// Resume challenge with recalculated dates
+// Resume challenge - simplified version that only updates pause status
 export const resumeChallenge = async (): Promise<void> => {
   try {
     console.log('Resuming challenge...');
 
-    // Get current settings to calculate where we left off
+    // Get current settings to ensure challenge exists
     const currentSettings = await getChallengeSettings();
     if (!currentSettings) {
       throw new Error('Challenge settings not found');
@@ -1344,81 +1312,18 @@ export const resumeChallenge = async (): Promise<void> => {
     if (!currentSettings.isPaused) {
       throw new Error('Challenge is not currently paused');
     }
-    
-    if (!currentSettings.pausedAt) {
-      throw new Error('Pause timestamp not found');
-    }
-    
-    if (!currentSettings.startDate) {
-      throw new Error('Challenge start date not found');
-    }
-    
-    if (!currentSettings.challengeDays || currentSettings.challengeDays.length === 0) {
-      throw new Error('Challenge days not configured');
-    }
 
-    const resumeDate = new Date();
-    
-    // Safely extract dates with proper error handling
-    let pausedAt: Date;
-    let startDate: Date;
-    
-    try {
-      pausedAt = currentSettings.pausedAt.toDate();
-    } catch (e) {
-      throw new Error('Invalid pause timestamp format');
-    }
-    
-    try {
-      startDate = currentSettings.startDate.toDate();
-    } catch (e) {
-      throw new Error('Invalid start date format');
-    }
-
-    // Calculate which day we were on when paused
-    const pausedDay = calculateCurrentDay(startDate, currentSettings.dayDuration, true, pausedAt);
-
-    // Recalculate remaining challenge days from resume point
-    const updatedChallengeDays = recalculateChallengeDays(
-      currentSettings.challengeDays,
-      pausedDay,
-      resumeDate,
-      currentSettings.dayDuration
-    );
-
-    console.log('Recalculated challenge schedule from resume:');
-    updatedChallengeDays.slice(pausedDay).forEach(day => {
-      try {
-        const scheduledDate = day.scheduledDate.toDate();
-        const trackingDate = day.trackingDate.toDate();
-        console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
-      } catch (e) {
-        console.warn(`Failed to log date for Day ${day.dayNumber}:`, e);
-      }
-    });
-
-    // Validate the updated challenge days
-    if (!updatedChallengeDays || updatedChallengeDays.length === 0) {
-      throw new Error('Failed to recalculate challenge days');
-    }
-
-    // Ensure no duplicate dates in the final result
-    const deduplicatedDays = deduplicateChallengeDays(updatedChallengeDays);
-    
+    // Simple resume - just update the pause status
     const settings: Partial<ChallengeSettings> = {
       isPaused: false,
-      resumedAt: serverTimestamp(),
-      currentDay: Math.max(pausedDay, 0), // Resume from paused day or trial
-      challengeDays: deduplicatedDays
+      resumedAt: serverTimestamp()
     };
 
-    console.log(`Resuming challenge from Day ${pausedDay}...`);
-    console.log('Settings to update:', JSON.stringify(settings, null, 2));
-    
+    console.log('Updating challenge settings to resume...');
     await updateChallengeSettings(settings);
 
-    // Activate current day tasks
-    const currentDayTasks = query(collection(db, 'tasks'), where('dayNumber', '==', Math.max(pausedDay, 0)));
+    // Reactivate tasks for the current day
+    const currentDayTasks = query(collection(db, 'tasks'), where('dayNumber', '==', currentSettings.currentDay));
     const currentTasksSnapshot = await getDocs(currentDayTasks);
 
     if (!currentTasksSnapshot.empty) {
@@ -1428,7 +1333,7 @@ export const resumeChallenge = async (): Promise<void> => {
         batch.update(taskDoc.ref, { isActive: true });
       });
       await batch.commit();
-      console.log(`Day ${pausedDay} tasks reactivated successfully`);
+      console.log(`Day ${currentSettings.currentDay} tasks reactivated successfully`);
     }
 
     console.log('Challenge resumed successfully!');
@@ -1527,6 +1432,38 @@ export const checkAndStartChallenge = async (): Promise<boolean> => {
     const settings = await getChallengeSettings();
     if (!settings || settings.isActive) {
       return false; // Already active or no settings
+    }
+
+    // Check if this is a previously started challenge (has startDate)
+    // This prevents regenerating challenge days when resuming a paused challenge
+    if (settings.startDate) {
+      console.log('Challenge was previously started, reactivating without regenerating dates...');
+      
+      // Just reactivate the challenge without regenerating challenge days
+      const settingsUpdate: Partial<ChallengeSettings> = {
+        isActive: true,
+        isPaused: false,
+        updatedAt: serverTimestamp()
+      };
+
+      await updateChallengeSettings(settingsUpdate);
+
+      // Reactivate tasks for the current day
+      if (settings.currentDay >= 0) {
+        const currentDayTasks = query(collection(db, 'tasks'), where('dayNumber', '==', settings.currentDay));
+        const currentTasksSnapshot = await getDocs(currentDayTasks);
+
+        if (!currentTasksSnapshot.empty) {
+          const batch = writeBatch(db);
+          currentTasksSnapshot.docs.forEach(taskDoc => {
+            batch.update(taskDoc.ref, { isActive: true });
+          });
+          await batch.commit();
+          console.log(`Day ${settings.currentDay} tasks reactivated successfully`);
+        }
+      }
+
+      return true;
     }
 
     if (!settings.scheduledStartDate) {

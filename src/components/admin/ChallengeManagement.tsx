@@ -101,7 +101,7 @@ const ChallengeManagement: React.FC = () => {
   };
 
   const handleResumeChallenge = async () => {
-    if (!confirm('Are you sure you want to resume the challenge? This will recalculate remaining days and reactivate tasks.')) {
+    if (!confirm('Are you sure you want to resume the challenge? This will reactivate tasks for the current day and continue from where it was paused.')) {
       return;
     }
     
