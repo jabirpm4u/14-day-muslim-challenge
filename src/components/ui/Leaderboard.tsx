@@ -16,6 +16,25 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 
 
   const [totalAvailableTasks, setTotalAvailableTasks] = useState(0);
 
+  // Add CSS animations
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
   useEffect(() => {
     const loadChallengeData = async () => {
       try {
@@ -37,13 +56,47 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 
     loadChallengeData();
 
     const unsubscribe = subscribeToLeaderboard((data) => {
-      console.log('📊 Leaderboard component received data:', {
-        totalEntries: data.length,
-        maxEntries,
-        entriesShown: data.slice(0, maxEntries).length,
-        entries: data.map(d => ({ name: d.name, points: d.totalPoints, rank: d.rank }))
+      // Apply global ranking rules locally to ensure consistency:
+      // 1) totalPoints desc, 2) completedTasks desc, 3) name asc (case-insensitive)
+      const normalized = data.map((d) => ({
+        ...d,
+        completedTasks:
+          typeof d.completedTasks === 'number'
+            ? d.completedTasks
+            : Array.isArray((d as any).progress)
+            ? ((d as any).progress as boolean[]).filter(Boolean).length
+            : (typeof (d as any).progress === 'object' && (d as any).progress)
+            ? Object.values((d as any).progress as Record<string, boolean>).filter(Boolean).length
+            : 0,
+      }));
+
+      normalized.sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        if (b.completedTasks !== a.completedTasks) return b.completedTasks - a.completedTasks;
+        const an = (a.name || '').toString().toLowerCase();
+        const bn = (b.name || '').toString().toLowerCase();
+        return an.localeCompare(bn);
       });
-      setLeaderboard(data.slice(0, maxEntries));
+
+      // Assign ranks with ties. Same rank for equal tuple; next rank is 1-based index.
+      let last: { p: number; c: number; n: string } | null = null;
+      let lastRank = 0;
+      const ranked = normalized.map((entry, idx) => {
+        const current = {
+          p: entry.totalPoints,
+          c: entry.completedTasks,
+          n: (entry.name || '').toString().toLowerCase(),
+        };
+        const sameAsLast =
+          last && last.p === current.p && last.c === current.c && last.n === current.n;
+        const rank = sameAsLast ? lastRank : idx + 1;
+        last = current;
+        lastRank = rank;
+        return { ...entry, rank } as LeaderboardEntry;
+      });
+
+      console.log('📊 Leaderboard computed rankings:', ranked.slice(0, maxEntries).map(e => ({ name: e.name, totalPoints: e.totalPoints, completedTasks: (e as any).completedTasks, rank: e.rank })));
+      setLeaderboard(ranked.slice(0, maxEntries));
       setLoading(false);
     });
 
@@ -64,17 +117,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 
     }
   };
 
-  const getCardStyle = (rank: number) => {
-    if (rank === 1) {
-      return 'bg-gradient-to-br from-yellow-50/90 via-yellow-50/80 to-amber-50/90 border-2 border-yellow-300/70 shadow-yellow-200/40 ring-2 ring-yellow-200/20 hover:ring-yellow-300/30';
-    } else if (rank === 2) {
-      return 'bg-gradient-to-br from-gray-50/90 via-slate-50/80 to-gray-50/90 border-2 border-gray-300/70 shadow-gray-200/40 ring-2 ring-gray-200/20 hover:ring-gray-300/30';
-    } else if (rank === 3) {
-      return 'bg-gradient-to-br from-amber-50/90 via-orange-50/80 to-amber-50/90 border-2 border-amber-300/70 shadow-amber-200/40 ring-2 ring-amber-200/20 hover:ring-amber-300/30';
-    } else {
-      return 'bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 border border-blue-200/50 shadow-blue-100/30 hover:shadow-blue-200/50';
-    }
-  };
+  // (Removed old getCardStyle, now styling inline per rank)
 
 
 
@@ -105,162 +148,178 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className = "", maxEntries = 
   return (
     <div className={`${className}`}>
       {leaderboard.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="relative mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto shadow-xl">
-              <Trophy className="w-10 h-10 text-gray-400" />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl blur-xl opacity-30 animate-pulse" />
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-8 h-8 text-gray-400" />
           </div>
-          <h4 className="text-xl font-bold text-gray-900 mb-3">No Participants Yet</h4>
-          <p className="text-gray-500 mb-2">Be the first to complete a task and claim the crown! 👑</p>
-          <p className="text-sm text-gray-400">Check console for debugging information</p>
+          <h4 className="text-lg font-bold text-gray-900 mb-2">No Participants Yet</h4>
+          <p className="text-gray-500 text-sm">Be the first to complete a task! 👑</p>
         </div>
       ) : (
-        <div className={disableInternalScrolling ? "space-y-3" : "space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"}>
-          {leaderboard.map((entry) => {
+        <div className={disableInternalScrolling ? "space-y-1" : "space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"}>
+          {leaderboard.map((entry, index) => {
             const rankInfo = getRankIcon(entry.rank);
             const IconComponent = rankInfo.icon;
+            const isTopThree = entry.rank <= 3;
+            const isFirst = entry.rank === 1;
+            const isSecond = entry.rank === 2;
+            const isThird = entry.rank === 3;
             
             return (
               <div
                 key={entry.userId}
-                className={`group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] touch-manipulation ${getCardStyle(entry.rank)}`}
-              >
-                {/* Sophisticated background pattern with layered effects */}
-                <div className={`absolute inset-0 transition-all duration-500 ${
-                  entry.rank <= 3 
+                className={`group relative overflow-hidden rounded-xl border transition-all duration-500 cursor-pointer transform hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] ${
+                  isTopThree 
                     ? entry.rank === 1 
-                      ? "bg-gradient-to-br from-yellow-100/20 via-yellow-100/15 to-amber-100/20" 
+                      ? 'bg-gradient-to-r from-yellow-50/95 via-amber-50/90 to-yellow-50/95 border-yellow-300/70 shadow-yellow-200/60 hover:shadow-yellow-300/80'
                       : entry.rank === 2
-                      ? "bg-gradient-to-br from-gray-100/20 via-slate-100/15 to-gray-100/20"
-                      : "bg-gradient-to-br from-amber-100/20 via-orange-100/15 to-amber-100/20"
-                    : "bg-gradient-to-br from-white/20 to-transparent"
-                }`} />
-                
-                {/* Success shimmer effect for top 3 */}
-                {entry.rank <= 3 && (
-                  <div className={`absolute inset-0 bg-gradient-to-r from-transparent ${
-                    entry.rank === 1 ? 'via-yellow-200/10' : 
-                    entry.rank === 2 ? 'via-gray-200/10' : 
-                    'via-amber-200/10'
-                  } to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out`} />
-                )}
-                
-                {/* Subtle glow for top 3 */}
-                {entry.rank <= 3 && (
-                  <div className={`absolute -inset-0.5 ${
-                    entry.rank === 1 ? 'bg-gradient-to-r from-yellow-400/20 via-yellow-400/30 to-amber-400/20' :
-                    entry.rank === 2 ? 'bg-gradient-to-r from-gray-400/20 via-gray-400/30 to-slate-400/20' :
-                    'bg-gradient-to-r from-amber-400/20 via-orange-400/30 to-amber-400/20'
-                  } rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                )}
-                
-                {/* Success pattern overlay for top 3 */}
-                {entry.rank <= 3 && (
-                  <div className="absolute inset-0 opacity-5">
-                    <div className={`absolute top-2 right-2 w-8 h-8 border-2 ${
-                      entry.rank === 1 ? 'border-yellow-400' :
-                      entry.rank === 2 ? 'border-gray-400' :
-                      'border-amber-400'
-                    } rounded-full`} />
-                    <div className={`absolute bottom-2 left-2 w-6 h-6 border-2 ${
-                      entry.rank === 1 ? 'border-yellow-400' :
-                      entry.rank === 2 ? 'border-gray-400' :
-                      'border-amber-400'
-                    } rounded-full`} />
-                    <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 border-2 ${
-                      entry.rank === 1 ? 'border-yellow-400' :
-                      entry.rank === 2 ? 'border-gray-400' :
-                      'border-amber-400'
-                    } rounded-full`} />
-                  </div>
-                )}
-                
+                      ? 'bg-gradient-to-r from-gray-50/95 via-slate-50/90 to-gray-50/95 border-gray-300/70 shadow-gray-200/60 hover:shadow-gray-300/80'
+                      : 'bg-gradient-to-r from-amber-50/95 via-orange-50/90 to-amber-50/95 border-amber-300/70 shadow-amber-200/60 hover:shadow-amber-300/80'
+                    : 'bg-white/90 border-gray-200/60 hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-indigo-50/80 hover:border-blue-300/60 hover:shadow-blue-200/40'
+                }`}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animation: 'fadeInUp 0.6s ease-out forwards'
+                }}
+              >
+                {/* Animated background effects */}
+                <div className="absolute inset-0 overflow-hidden">
+                  {/* Shimmer effect for top 3 */}
+                  {isTopThree && (
+                    <div className={`absolute inset-0 bg-gradient-to-r from-transparent ${
+                      isFirst ? 'via-yellow-200/20' : 
+                      isSecond ? 'via-gray-200/20' : 
+                      'via-amber-200/20'
+                    } to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out`} />
+                  )}
+                  
+                  {/* Floating particles for #1 */}
+                  {isFirst && (
+                    <>
+                      <div className="absolute top-2 right-2 w-1 h-1 bg-yellow-400 rounded-full animate-ping opacity-60" style={{ animationDelay: '0.5s' }} />
+                      <div className="absolute bottom-2 left-2 w-1 h-1 bg-amber-400 rounded-full animate-ping opacity-60" style={{ animationDelay: '1s' }} />
+                      <div className="absolute top-1/2 right-1/3 w-0.5 h-0.5 bg-yellow-300 rounded-full animate-ping opacity-40" style={{ animationDelay: '1.5s' }} />
+                    </>
+                  )}
+                  
+                  {/* Subtle glow effect */}
+                  <div className={`absolute -inset-0.5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                    isFirst ? 'bg-gradient-to-r from-yellow-400/30 via-amber-400/40 to-yellow-400/30' :
+                    isSecond ? 'bg-gradient-to-r from-gray-400/30 via-slate-400/40 to-gray-400/30' :
+                    isThird ? 'bg-gradient-to-r from-amber-400/30 via-orange-400/40 to-amber-400/30' :
+                    'bg-gradient-to-r from-blue-400/20 via-indigo-400/30 to-blue-400/20'
+                  }`} />
+                </div>
+
                 <div className="p-3 relative">
                   <div className="flex items-center justify-between">
-                    {/* Compact left side */}
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      {/* Compact rank icon with sophisticated treatment */}
+                    {/* Left side - Rank & Info */}
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      {/* Enhanced rank badge with animations */}
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg transition-all duration-300 ${rankInfo.bg} ${
-                          entry.rank <= 3 ? 'ring-2 ring-white/60 shadow-lg group-hover:shadow-xl group-hover:ring-white/80 group-hover:scale-105' : ''
-                        }`}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg transition-all duration-500 ${rankInfo.bg} ${
+                          isTopThree ? 'ring-2 ring-white/60 group-hover:ring-white/80 group-hover:scale-110' : 'group-hover:scale-105'
+                        } ${isFirst ? 'animate-pulse' : ''}`}
+                        style={{
+                          background: isFirst 
+                            ? 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)' 
+                            : isSecond
+                            ? 'linear-gradient(135deg, #6b7280, #4b5563, #374151)'
+                            : isThird
+                            ? 'linear-gradient(135deg, #f59e0b, #ea580c, #dc2626)'
+                            : 'linear-gradient(135deg, #3b82f6, #1d4ed8, #1e40af)'
+                        }}
                       >
-                        <span className="text-xs font-bold">{entry.rank}</span>
+                        {isTopThree ? (
+                          <IconComponent className={`w-4 h-4 ${isFirst ? 'animate-bounce' : ''}`} />
+                        ) : (
+                          <span className="text-xs font-bold">{entry.rank}</span>
+                        )}
                       </div>
 
-                      {/* Compact content */}
+                      {/* User info with enhanced styling */}
                       <div className="flex-1 min-w-0">
                         <h3
-                          className={`font-bold text-sm leading-tight truncate transition-colors duration-300 ${
-                            entry.rank <= 3
+                          className={`font-bold text-sm leading-tight truncate transition-all duration-300 group-hover:scale-105 ${
+                            isTopThree
                               ? entry.rank === 1 
                                 ? "text-yellow-800 group-hover:text-yellow-900"
                                 : entry.rank === 2
                                 ? "text-gray-800 group-hover:text-gray-900"
                                 : "text-amber-800 group-hover:text-amber-900"
-                              : "text-gray-900"
+                              : "text-gray-900 group-hover:text-blue-900"
                           }`}
                         >
                           {entry.name}
                         </h3>
-
-                        {/* Enhanced points display with sophisticated treatment */}
                         <div className="flex items-center space-x-2 mt-0.5">
                           <span
-                            className={`text-xs font-semibold transition-all duration-300 ${
-                              entry.rank <= 3 
+                            className={`text-xs font-semibold transition-all duration-300 group-hover:scale-105 ${
+                              isTopThree 
                                 ? entry.rank === 1
-                                  ? "text-yellow-600 bg-yellow-100/60 px-2 py-0.5 rounded-full group-hover:bg-yellow-200/80 group-hover:text-yellow-700"
+                                  ? "text-yellow-700 bg-gradient-to-r from-yellow-100 to-amber-100 px-2 py-1 rounded-lg shadow-sm"
                                   : entry.rank === 2
-                                  ? "text-gray-600 bg-gray-100/60 px-2 py-0.5 rounded-full group-hover:bg-gray-200/80 group-hover:text-gray-700"
-                                  : "text-amber-600 bg-amber-100/60 px-2 py-0.5 rounded-full group-hover:bg-amber-200/80 group-hover:text-amber-700"
-                                : "text-blue-600"
+                                  ? "text-gray-700 bg-gradient-to-r from-gray-100 to-slate-100 px-2 py-1 rounded-lg shadow-sm"
+                                  : "text-amber-700 bg-gradient-to-r from-amber-100 to-orange-100 px-2 py-1 rounded-lg shadow-sm"
+                                : "text-blue-700 bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-1 rounded-lg shadow-sm group-hover:from-blue-100 group-hover:to-indigo-100"
                             }`}
                           >
                             {entry.totalPoints} pts
                           </span>
-                          <span className="text-xs text-gray-500">
-                            {entry.completedTasks}/{totalAvailableTasks} tasks
+                          <span className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors duration-300">
+                            {entry.completedTasks} tasks
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Compact status indicator */}
-                    <div className="flex items-center space-x-1">
-                      {entry.rank <= 3 && (
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                            entry.rank === 1 ? 'bg-yellow-100 text-yellow-600' :
-                            entry.rank === 2 ? 'bg-gray-100 text-gray-600' :
-                            'bg-amber-100 text-amber-600'
-                          } group-hover:scale-105`}
-                        >
-                          <IconComponent className="w-4 h-4" />
+                    {/* Right side - Enhanced progress indicator */}
+                    <div className="flex items-center space-x-2">
+                      {/* Animated progress circle with glow */}
+                      <div className="relative w-10 h-10 group/progress">
+                        <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
+                          <circle 
+                            cx="20" 
+                            cy="20" 
+                            r="16" 
+                            stroke="currentColor" 
+                            strokeWidth="3" 
+                            fill="none" 
+                            className="text-gray-200" 
+                          />
+                          <circle 
+                            cx="20" 
+                            cy="20" 
+                            r="16" 
+                            stroke="currentColor" 
+                            strokeWidth="3" 
+                            fill="none" 
+                            strokeDasharray={`${2 * Math.PI * 16}`} 
+                            strokeDashoffset={`${2 * Math.PI * 16 * (1 - Math.min(entry.completedTasks / Math.max(totalAvailableTasks, 1), 1))}`} 
+                            className={`transition-all duration-700 group-hover:drop-shadow-lg ${
+                              isFirst ? 'text-yellow-500 drop-shadow-yellow-200' :
+                              isSecond ? 'text-gray-500 drop-shadow-gray-200' :
+                              isThird ? 'text-amber-500 drop-shadow-amber-200' :
+                              'text-blue-500 drop-shadow-blue-200'
+                            }`}
+                            strokeLinecap="round" 
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-[9px] font-bold text-gray-700 group-hover:text-gray-900 transition-colors duration-300">
+                            {Math.round((entry.completedTasks / Math.max(totalAvailableTasks, 1)) * 100)}%
+                          </span>
                         </div>
-                      )}
-                      {entry.rank > 3 && (
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 transition-all duration-300 group-hover:scale-105">
-                          <span className="text-xs font-bold">#{entry.rank}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Progress bar matching task card style */}
-                  <div className="mt-2">
-                    <div className="w-full bg-gray-200/50 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          entry.rank === 1 ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' :
-                          entry.rank === 2 ? 'bg-gradient-to-r from-gray-400 via-gray-500 to-gray-600' :
-                          entry.rank === 3 ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600' :
-                          'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600'
-                        }`}
-                        style={{ width: `${Math.min((entry.completedTasks / 15) * 100, 100)}%` }}
-                      />
+                        
+                        {/* Pulsing ring for top 3 */}
+                        {isTopThree && (
+                          <div className={`absolute inset-0 rounded-full border-2 ${
+                            isFirst ? 'border-yellow-300' :
+                            isSecond ? 'border-gray-300' :
+                            'border-amber-300'
+                          } opacity-0 group-hover/progress:opacity-100 animate-ping`} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

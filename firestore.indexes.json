@@ -17,6 +17,14 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "tasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dayNumber", "order": "ASCENDING" },
+        { "fieldPath": "sortIndex", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
