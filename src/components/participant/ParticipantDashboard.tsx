@@ -436,22 +436,21 @@ const DateStrip: React.FC<{
           const todayStart = new Date(today);
           todayStart.setHours(0, 0, 0, 0);
 
-          const isToday = dayStart.getTime() === todayStart.getTime();
-          const isPast = dayStart.getTime() < todayStart.getTime();
-          const isFuture = dayStart.getTime() > todayStart.getTime();
-          const daysDiff = Math.floor(
-            (todayStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000)
-          );
-
-          // Show all dates but with different lock states
-          const isLocked = daysDiff > 1 || isFuture; // More than 1 day ago or future = locked
+          // Use challenge's current day as "today" instead of actual calendar date
+          const currentDay = challengeSettings?.currentDay ?? 1;
+          const isCurrentChallengeDay = challengeDay.dayNumber === currentDay;
+          const isPast = challengeDay.dayNumber < currentDay;
+          const isFuture = challengeDay.dayNumber > currentDay;
+          
+          // Lock days based on challenge progress, not calendar date
+          const isLocked = isFuture || (challengeDay.dayNumber < currentDay - 1);
 
           dates.push({
             date: dayStart,
             dayNumber: challengeDay.dayNumber,
             isScheduled: true,
             isLocked,
-            isToday,
+            isToday: isCurrentChallengeDay, // Use challenge day instead of calendar date
             isPast,
             isFuture,
           });
@@ -480,13 +479,32 @@ const DateStrip: React.FC<{
   };
 
   const formatDayName = (date: Date) => {
-    const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    const isYesterday = date.toDateString() === yesterday.toDateString();
+    // Find which challenge day this date corresponds to
+    const matchingChallengeDay = challengeSettings?.challengeDays?.find(
+      (day) => {
+        if (day.scheduledDate) {
+          const scheduledDate = day.scheduledDate.toDate();
+          const scheduledDateStart = new Date(scheduledDate);
+          scheduledDateStart.setHours(0, 0, 0, 0);
+          
+          const dateStart = new Date(date);
+          dateStart.setHours(0, 0, 0, 0);
+          
+          return scheduledDateStart.getTime() === dateStart.getTime();
+        }
+        return false;
+      }
+    );
 
-    if (isToday) return "Today";
-    if (isYesterday) return "Yesterday";
+    if (matchingChallengeDay) {
+      // Use challenge day logic instead of calendar date
+      const currentDay = challengeSettings?.currentDay ?? 1;
+      if (matchingChallengeDay.dayNumber === currentDay) {
+        return "Today";
+      } else if (matchingChallengeDay.dayNumber === currentDay - 1) {
+        return "Yesterday";
+      }
+    }
 
     return date.toLocaleDateString("en-US", { weekday: "short" });
   };
@@ -832,31 +850,30 @@ const ParticipantDashboard: React.FC = () => {
       challengeSettings?.challengeDays &&
       challengeSettings.challengeDays.length > 0
     ) {
-      // Find today's challenge day or the closest available day
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Always prioritize the current challenge day over actual calendar date
+      const currentChallengeDay = challengeSettings.challengeDays.find(
+        (day) => day.dayNumber === challengeSettings.currentDay
+      );
 
-      // First try to find today's scheduled day
-      const todaysDay = challengeSettings.challengeDays.find((day) => {
-        if (day.scheduledDate) {
-          const scheduledDate = day.scheduledDate.toDate();
-          const scheduledDateStart = new Date(scheduledDate);
-          scheduledDateStart.setHours(0, 0, 0, 0);
-          return scheduledDateStart.getTime() === today.getTime();
-        }
-        return false;
-      });
-
-      if (todaysDay && todaysDay.scheduledDate) {
-        setSelectedDate(todaysDay.scheduledDate.toDate());
+      if (currentChallengeDay && currentChallengeDay.scheduledDate) {
+        setSelectedDate(currentChallengeDay.scheduledDate.toDate());
       } else {
-        // If no exact match, find the current day based on currentDay
-        const currentChallengeDay = challengeSettings.challengeDays.find(
-          (day) => day.dayNumber === challengeSettings.currentDay
-        );
+        // Fallback: try to find today's scheduled day
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        if (currentChallengeDay && currentChallengeDay.scheduledDate) {
-          setSelectedDate(currentChallengeDay.scheduledDate.toDate());
+        const todaysDay = challengeSettings.challengeDays.find((day) => {
+          if (day.scheduledDate) {
+            const scheduledDate = day.scheduledDate.toDate();
+            const scheduledDateStart = new Date(scheduledDate);
+            scheduledDateStart.setHours(0, 0, 0, 0);
+            return scheduledDateStart.getTime() === today.getTime();
+          }
+          return false;
+        });
+
+        if (todaysDay && todaysDay.scheduledDate) {
+          setSelectedDate(todaysDay.scheduledDate.toDate());
         }
       }
     }
