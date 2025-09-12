@@ -180,6 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       console.log(`🥷 Admin ${userRole.name} entering ninja mode as participant: ${participantId}`);
+      console.log('🔍 Current userRole before ninja:', userRole);
       
       // Get participant data
       const participantData = await getParticipantRoleData(participantId);
@@ -188,14 +189,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Participant not found');
       }
 
+      console.log('🔍 Participant data retrieved:', participantData);
+
       // Store original admin role
       setOriginalAdminRole(userRole);
+      console.log('🔍 Original admin role stored:', userRole);
       
       // Switch to participant role
       setUserRole(participantData);
       setIsNinjaMode(true);
       
       console.log(`✅ Ninja mode activated - now viewing as: ${participantData.name}`);
+      console.log('🔍 New userRole after ninja:', participantData);
+      console.log('🔍 isNinjaMode set to:', true);
     } catch (error) {
       console.error('❌ Ninja login failed:', error);
       throw error;
@@ -217,6 +223,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setOriginalAdminRole(null);
     
     console.log('✅ Returned to admin mode');
+    
+    // Redirect to admin dashboard
+    window.location.href = '/admin';
   };
 
   const value: AuthContextType = {

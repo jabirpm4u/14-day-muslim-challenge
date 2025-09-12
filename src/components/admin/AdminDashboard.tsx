@@ -378,8 +378,7 @@ const AdminDashboard: React.FC = () => {
       
       await ninjaLogin(participantId);
       
-      // Redirect to participant dashboard
-      window.location.href = '/dashboard';
+      console.log('✅ Ninja login successful - routing will handle redirect');
       
     } catch (error) {
       console.error('❌ Ninja login failed:', error);

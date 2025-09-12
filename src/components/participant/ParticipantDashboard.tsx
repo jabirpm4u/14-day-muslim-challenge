@@ -428,36 +428,48 @@ const DateStrip: React.FC<{
 
     sortedChallengeDays.forEach((challengeDay) => {
       if (challengeDay.scheduledDate) {
-        const scheduledDate = challengeDay.scheduledDate.toDate();
-        const dayStart = new Date(scheduledDate);
-        dayStart.setHours(0, 0, 0, 0);
+        try {
+          const scheduledDate = challengeDay.scheduledDate.toDate();
+          const dayStart = new Date(scheduledDate);
+          dayStart.setHours(0, 0, 0, 0);
 
-        const todayStart = new Date(today);
-        todayStart.setHours(0, 0, 0, 0);
+          const todayStart = new Date(today);
+          todayStart.setHours(0, 0, 0, 0);
 
-        const isToday = dayStart.getTime() === todayStart.getTime();
-        const isPast = dayStart.getTime() < todayStart.getTime();
-        const isFuture = dayStart.getTime() > todayStart.getTime();
-        const daysDiff = Math.floor(
-          (todayStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000)
-        );
+          const isToday = dayStart.getTime() === todayStart.getTime();
+          const isPast = dayStart.getTime() < todayStart.getTime();
+          const isFuture = dayStart.getTime() > todayStart.getTime();
+          const daysDiff = Math.floor(
+            (todayStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000)
+          );
 
-        // Show all dates but with different lock states
-        const isLocked = daysDiff > 1 || isFuture; // More than 1 day ago or future = locked
+          // Show all dates but with different lock states
+          const isLocked = daysDiff > 1 || isFuture; // More than 1 day ago or future = locked
 
-        dates.push({
-          date: dayStart,
-          dayNumber: challengeDay.dayNumber,
-          isScheduled: true,
-          isLocked,
-          isToday,
-          isPast,
-          isFuture,
-        });
+          dates.push({
+            date: dayStart,
+            dayNumber: challengeDay.dayNumber,
+            isScheduled: true,
+            isLocked,
+            isToday,
+            isPast,
+            isFuture,
+          });
+        } catch (e) {
+          console.warn(`Failed to process challenge day ${challengeDay.dayNumber}:`, e);
+        }
       }
     });
 
-    return dates.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Remove duplicates based on date timestamp and day number combination
+    const uniqueDates = dates.filter((date, index, self) => 
+      index === self.findIndex(d => 
+        d.date.getTime() === date.date.getTime() && 
+        d.dayNumber === date.dayNumber
+      )
+    );
+
+    return uniqueDates.sort((a, b) => a.date.getTime() - b.date.getTime());
   };
 
   const availableDates = getAvailableDates();
@@ -483,14 +495,17 @@ const DateStrip: React.FC<{
     <div className="bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-xl border-b border-blue-100/50 px-3 py-1.5">
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         <div className="flex items-center space-x-1.5 min-w-max px-2">
-          {availableDates.map((dateInfo) => {
+          {availableDates.map((dateInfo, index) => {
             const isSelected =
               dateInfo.date.toDateString() === selectedDate.toDateString();
             const isToday = dateInfo.isToday;
 
+            // Create a more robust key using timestamp for uniqueness
+            const key = `${dateInfo.dayNumber}-${dateInfo.date.getTime()}-${index}`;
+
             return (
               <button
-                key={dateInfo.date.toDateString()}
+                key={key}
                 onClick={() =>
                   !dateInfo.isLocked && onDateSelect(dateInfo.date)
                 }

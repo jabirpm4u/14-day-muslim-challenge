@@ -28,7 +28,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Role-based Route Component
 const RoleBasedRoute: React.FC<{ allowedRole: 'admin' | 'participant' }> = ({ allowedRole }) => {
-  const { userRole, loading } = useAuth();
+  const { userRole, loading, isNinjaMode, originalAdminRole } = useAuth();
+
+  console.log('🔍 RoleBasedRoute called with:', {
+    allowedRole,
+    userRole: userRole?.role,
+    isNinjaMode,
+    hasOriginalAdminRole: !!originalAdminRole,
+    loading
+  });
 
   if (loading) {
     return <LoadingSpinner />;
@@ -38,12 +46,38 @@ const RoleBasedRoute: React.FC<{ allowedRole: 'admin' | 'participant' }> = ({ al
     return <Navigate to="/login" replace />;
   }
 
+  // Handle ninja mode: if admin is in ninja mode, allow access to participant dashboard
+  if (isNinjaMode && originalAdminRole) {
+    console.log('🥷 In ninja mode - handling special routing');
+    // In ninja mode, admin can access participant dashboard
+    if (allowedRole === 'participant') {
+      console.log('🥷 Allowing access to participant dashboard in ninja mode');
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <ParticipantDashboard />
+        </Suspense>
+      );
+    }
+    // If trying to access admin dashboard while in ninja mode, redirect to participant dashboard
+    if (allowedRole === 'admin') {
+      console.log('🥷 Redirecting to participant dashboard from admin route in ninja mode');
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  // Normal role checking (not in ninja mode)
   if (userRole.role !== allowedRole) {
+    console.log('🔍 Role mismatch - redirecting:', {
+      userRole: userRole.role,
+      allowedRole,
+      redirectPath: userRole.role === 'admin' ? '/admin' : '/dashboard'
+    });
     // Redirect to appropriate dashboard based on role
     const redirectPath = userRole.role === 'admin' ? '/admin' : '/dashboard';
     return <Navigate to={redirectPath} replace />;
   }
 
+  console.log('🔍 Normal routing - showing dashboard for role:', allowedRole);
   return allowedRole === 'admin' ? (
     <Suspense fallback={<LoadingSpinner />}>
       <AdminDashboard />
@@ -57,7 +91,7 @@ const RoleBasedRoute: React.FC<{ allowedRole: 'admin' | 'participant' }> = ({ al
 
 // Main App Routes Component
 const AppRoutes: React.FC = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, isNinjaMode } = useAuth();
   const [challengeSettings, setChallengeSettings] = React.useState<ChallengeSettings | null>(null);
 
   console.log("🚀 AppRoutes component loaded");
@@ -258,7 +292,9 @@ const AppRoutes: React.FC = () => {
       {/* Public Route */}
       <Route 
         path="/login" 
-        element={!user ? <Login /> : <Navigate to={userRole?.role === 'admin' ? '/admin' : '/dashboard'} replace />} 
+        element={!user ? <Login /> : <Navigate to={
+          isNinjaMode ? '/dashboard' : (userRole?.role === 'admin' ? '/admin' : '/dashboard')
+        } replace />} 
       />
       
       {/* Protected Routes */}
@@ -289,7 +325,9 @@ const AppRoutes: React.FC = () => {
           challengeSettings && !challengeSettings.isActive ? (
             <Landing challengeSettings={challengeSettings} />
           ) : user && userRole ? (
-            <Navigate to={userRole.role === 'admin' ? '/admin' : '/dashboard'} replace />
+            <Navigate to={
+              isNinjaMode ? '/dashboard' : (userRole.role === 'admin' ? '/admin' : '/dashboard')
+            } replace />
           ) : (
             <Navigate to="/login" replace />
           )
@@ -301,7 +339,9 @@ const AppRoutes: React.FC = () => {
         path="*" 
         element={
           user && userRole ? (
-            <Navigate to={userRole.role === 'admin' ? '/admin' : '/dashboard'} replace />
+            <Navigate to={
+              isNinjaMode ? '/dashboard' : (userRole.role === 'admin' ? '/admin' : '/dashboard')
+            } replace />
           ) : (
             <Navigate to="/login" replace />
           )

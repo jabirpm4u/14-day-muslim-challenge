@@ -882,7 +882,7 @@ const generateChallengeDays = (startDate: Date, endDate: Date, dayDuration: numb
     });
   }
 
-  return days;
+  return deduplicateChallengeDays(days);
 };
 
 // Helper function to calculate completed tasks excluding day 0 tasks
@@ -955,9 +955,45 @@ const calculateCurrentDay = (startDate: Date, dayDuration: number, isPaused: boo
   return Math.min(Math.max(daysPassed, 0), 14);
 };
 
+// Helper function to ensure unique challenge days (no duplicate dates)
+const deduplicateChallengeDays = (challengeDays: ChallengeDay[]): ChallengeDay[] => {
+  const seen = new Set<string>();
+  const uniqueDays: ChallengeDay[] = [];
+
+  // Sort by day number first to maintain order
+  const sortedDays = [...challengeDays].sort((a, b) => a.dayNumber - b.dayNumber);
+
+  for (const day of sortedDays) {
+    // Create a more robust key that includes both day number and exact timestamp
+    let key: string;
+    
+    try {
+      if (day.scheduledDate && typeof day.scheduledDate.toDate === 'function') {
+        const scheduledDate = day.scheduledDate.toDate();
+        // Use timestamp for more precision
+        key = `${day.dayNumber}-${scheduledDate.getTime()}`;
+      } else {
+        key = `${day.dayNumber}-no-date`;
+      }
+    } catch (e) {
+      key = `${day.dayNumber}-invalid-date`;
+    }
+    
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueDays.push(day);
+    } else {
+      console.warn(`Duplicate challenge day detected and removed: Day ${day.dayNumber} at timestamp ${key}`);
+    }
+  }
+
+  return uniqueDays;
+};
+
 // Helper function to recalculate remaining days when resuming
 const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: number, resumeDate: Date, dayDuration: number): ChallengeDay[] => {
-  const updatedDays = [...originalDays];
+  // Create a deep copy of the original days array
+  const updatedDays: ChallengeDay[] = originalDays.map(day => ({ ...day }));
 
   // Update remaining days starting from the paused day
   for (let i = pausedDay; i < updatedDays.length; i++) {
@@ -975,7 +1011,21 @@ const recalculateChallengeDays = (originalDays: ChallengeDay[], pausedDay: numbe
     }
   }
 
-  return updatedDays;
+  // Ensure no duplicates after recalculation
+  const deduplicatedDays = deduplicateChallengeDays(updatedDays);
+  
+  // Additional validation: ensure all days have valid dates
+  return deduplicatedDays.filter(day => {
+    try {
+      return day.scheduledDate && 
+             typeof day.scheduledDate.toDate === 'function' && 
+             day.trackingDate && 
+             typeof day.trackingDate.toDate === 'function';
+    } catch (e) {
+      console.warn(`Invalid date in challenge day ${day.dayNumber}`, e);
+      return false;
+    }
+  });
 };
 
 // Initialize challenge settings with default values
@@ -1074,8 +1124,17 @@ export const updateChallengeSettings = async (settings: Partial<ChallengeSetting
       console.log('🔄 UPDATE SETTINGS: Document created successfully');
     } else {
       console.log('🔄 UPDATE SETTINGS: Updating existing challenge settings...');
+      
+      // Deduplicate challenge days if they're being updated
+      const processedSettings = { ...cleanSettings };
+      if (processedSettings.challengeDays) {
+        console.log('🔄 UPDATE SETTINGS: Deduplicating challenge days...');
+        processedSettings.challengeDays = deduplicateChallengeDays(processedSettings.challengeDays);
+        console.log(`🔄 UPDATE SETTINGS: Challenge days after deduplication: ${processedSettings.challengeDays.length}`);
+      }
+      
       const updateData = {
-        ...cleanSettings,
+        ...processedSettings,
         updatedAt: serverTimestamp()
       };
       console.log('🔄 UPDATE SETTINGS: Update data:', updateData);
@@ -1299,8 +1358,22 @@ export const resumeChallenge = async (): Promise<void> => {
     }
 
     const resumeDate = new Date();
-    const pausedAt = currentSettings.pausedAt.toDate();
-    const startDate = currentSettings.startDate.toDate();
+    
+    // Safely extract dates with proper error handling
+    let pausedAt: Date;
+    let startDate: Date;
+    
+    try {
+      pausedAt = currentSettings.pausedAt.toDate();
+    } catch (e) {
+      throw new Error('Invalid pause timestamp format');
+    }
+    
+    try {
+      startDate = currentSettings.startDate.toDate();
+    } catch (e) {
+      throw new Error('Invalid start date format');
+    }
 
     // Calculate which day we were on when paused
     const pausedDay = calculateCurrentDay(startDate, currentSettings.dayDuration, true, pausedAt);
@@ -1315,9 +1388,13 @@ export const resumeChallenge = async (): Promise<void> => {
 
     console.log('Recalculated challenge schedule from resume:');
     updatedChallengeDays.slice(pausedDay).forEach(day => {
-      const scheduledDate = day.scheduledDate.toDate();
-      const trackingDate = day.trackingDate.toDate();
-      console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
+      try {
+        const scheduledDate = day.scheduledDate.toDate();
+        const trackingDate = day.trackingDate.toDate();
+        console.log(`Day ${day.dayNumber}: Scheduled ${scheduledDate.toLocaleDateString()} (Tracking ${trackingDate.toLocaleDateString()})`);
+      } catch (e) {
+        console.warn(`Failed to log date for Day ${day.dayNumber}:`, e);
+      }
     });
 
     // Validate the updated challenge days
@@ -1325,11 +1402,14 @@ export const resumeChallenge = async (): Promise<void> => {
       throw new Error('Failed to recalculate challenge days');
     }
 
+    // Ensure no duplicate dates in the final result
+    const deduplicatedDays = deduplicateChallengeDays(updatedChallengeDays);
+    
     const settings: Partial<ChallengeSettings> = {
       isPaused: false,
       resumedAt: serverTimestamp(),
       currentDay: Math.max(pausedDay, 0), // Resume from paused day or trial
-      challengeDays: updatedChallengeDays
+      challengeDays: deduplicatedDays
     };
 
     console.log(`Resuming challenge from Day ${pausedDay}...`);
