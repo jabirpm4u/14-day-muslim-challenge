@@ -329,7 +329,8 @@ const PremiumHeader: React.FC<{
             <div className="flex items-center space-x-2">
               <span className="text-lg">🥷</span>
               <span className="text-sm font-medium">
-                Ninja Mode: Viewing as participant | Admin: {originalAdminRole.name}
+                Ninja Mode: Viewing as participant | Admin:{" "}
+                {originalAdminRole.name}
               </span>
             </div>
             <button
@@ -341,7 +342,7 @@ const PremiumHeader: React.FC<{
           </div>
         </div>
       )}
-      
+
       {/* Optimized Compact Header */}
       <div className="px-3 py-3">
         <div className="flex items-center justify-between">
@@ -366,7 +367,7 @@ const PremiumHeader: React.FC<{
                 {totalPoints.toLocaleString()}
               </span>
             </div>
-            
+
             {/* Compact Day Badge */}
             {challengeSettings?.isActive && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
@@ -378,7 +379,7 @@ const PremiumHeader: React.FC<{
                 </span>
               </div>
             )}
-            
+
             {/* Compact Sign Out Button */}
             <button
               onClick={onSignOut}
@@ -400,10 +401,12 @@ const DateStrip: React.FC<{
   onDateSelect: (date: Date) => void;
   timeLeftDisplay?: string;
 }> = ({ challengeSettings, selectedDate, onDateSelect, timeLeftDisplay }) => {
-  
   // Generate available dates based on challenge schedule
   const getAvailableDates = () => {
-    if (!challengeSettings?.challengeDays || challengeSettings.challengeDays.length === 0) {
+    if (
+      !challengeSettings?.challengeDays ||
+      challengeSettings.challengeDays.length === 0
+    ) {
       return [];
     }
 
@@ -419,25 +422,29 @@ const DateStrip: React.FC<{
     }> = [];
 
     // Get all challenge days and sort by day number
-    const sortedChallengeDays = [...challengeSettings.challengeDays].sort((a, b) => a.dayNumber - b.dayNumber);
-    
+    const sortedChallengeDays = [...challengeSettings.challengeDays].sort(
+      (a, b) => a.dayNumber - b.dayNumber
+    );
+
     sortedChallengeDays.forEach((challengeDay) => {
       if (challengeDay.scheduledDate) {
         const scheduledDate = challengeDay.scheduledDate.toDate();
         const dayStart = new Date(scheduledDate);
         dayStart.setHours(0, 0, 0, 0);
-        
+
         const todayStart = new Date(today);
         todayStart.setHours(0, 0, 0, 0);
-        
+
         const isToday = dayStart.getTime() === todayStart.getTime();
         const isPast = dayStart.getTime() < todayStart.getTime();
         const isFuture = dayStart.getTime() > todayStart.getTime();
-        const daysDiff = Math.floor((todayStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000));
-        
+        const daysDiff = Math.floor(
+          (todayStart.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000)
+        );
+
         // Show all dates but with different lock states
         const isLocked = daysDiff > 1 || isFuture; // More than 1 day ago or future = locked
-        
+
         dates.push({
           date: dayStart,
           dayNumber: challengeDay.dayNumber,
@@ -445,7 +452,7 @@ const DateStrip: React.FC<{
           isLocked,
           isToday,
           isPast,
-          isFuture
+          isFuture,
         });
       }
     });
@@ -465,10 +472,10 @@ const DateStrip: React.FC<{
     const isToday = date.toDateString() === today.toDateString();
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
     const isYesterday = date.toDateString() === yesterday.toDateString();
-    
-    if (isToday) return 'Today';
-    if (isYesterday) return 'Yesterday';
-    
+
+    if (isToday) return "Today";
+    if (isYesterday) return "Yesterday";
+
     return date.toLocaleDateString("en-US", { weekday: "short" });
   };
 
@@ -477,60 +484,67 @@ const DateStrip: React.FC<{
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         <div className="flex items-center space-x-1.5 min-w-max px-2">
           {availableDates.map((dateInfo) => {
-            const isSelected = dateInfo.date.toDateString() === selectedDate.toDateString();
+            const isSelected =
+              dateInfo.date.toDateString() === selectedDate.toDateString();
             const isToday = dateInfo.isToday;
-            
+
             return (
               <button
                 key={dateInfo.date.toDateString()}
-                onClick={() => !dateInfo.isLocked && onDateSelect(dateInfo.date)}
+                onClick={() =>
+                  !dateInfo.isLocked && onDateSelect(dateInfo.date)
+                }
                 disabled={dateInfo.isLocked}
                 className={`relative flex flex-col items-center px-2.5 py-1.5 rounded-lg transition-all duration-300 min-w-[50px] ${
                   dateInfo.isLocked
-                    ? 'opacity-50 cursor-not-allowed bg-gray-100/50'
+                    ? "opacity-50 cursor-not-allowed bg-gray-100/50"
                     : isSelected
-                    ? 'bg-gradient-to-b from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50 transform scale-105'
-                    : 'hover:bg-white/60 hover:shadow-md transform hover:scale-105'
+                    ? "bg-gradient-to-b from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50 transform scale-105"
+                    : "hover:bg-white/60 hover:shadow-md transform hover:scale-105"
                 }`}
               >
                 {/* Lock icon for locked dates */}
                 {dateInfo.isLocked && (
                   <Lock className="w-3 h-3 text-gray-400 absolute top-1 right-1" />
                 )}
-                
+
                 {/* Day number */}
-                <span className={`text-base font-bold ${
-                  dateInfo.isLocked 
-                    ? 'text-gray-400' 
-                    : isSelected 
-                    ? 'text-white' 
-                    : isToday 
-                    ? 'text-blue-600' 
-                    : 'text-gray-700'
-                }`}>
+                <span
+                  className={`text-base font-bold ${
+                    dateInfo.isLocked
+                      ? "text-gray-400"
+                      : isSelected
+                      ? "text-white"
+                      : isToday
+                      ? "text-blue-600"
+                      : "text-gray-700"
+                  }`}
+                >
                   {formatDayNumber(dateInfo.date)}
                 </span>
-                
+
                 {/* Day name */}
-                <span className={`text-xs font-medium ${
-                  dateInfo.isLocked 
-                    ? 'text-gray-400' 
-                    : isSelected 
-                    ? 'text-blue-100' 
-                    : isToday 
-                    ? 'text-blue-600' 
-                    : 'text-gray-500'
-                }`}>
+                <span
+                  className={`text-xs font-medium ${
+                    dateInfo.isLocked
+                      ? "text-gray-400"
+                      : isSelected
+                      ? "text-blue-100"
+                      : isToday
+                      ? "text-blue-600"
+                      : "text-gray-500"
+                  }`}
+                >
                   {formatDayName(dateInfo.date)}
                 </span>
-                
+
                 {/* Removed challenge day indicator for cleaner look */}
-                
+
                 {/* Today indicator dot */}
                 {isToday && !isSelected && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
                 )}
-                
+
                 {/* Selection indicator */}
                 {isSelected && (
                   <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
@@ -540,18 +554,21 @@ const DateStrip: React.FC<{
           })}
         </div>
       </div>
-      
+
       {/* Countdown timer for today only */}
-      {timeLeftDisplay && selectedDate.toDateString() === today.toDateString() && challengeSettings?.isActive && !challengeSettings?.isPaused && (
-        <div className="flex items-center justify-center mt-2">
-          <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-50 to-red-50 px-3 py-1.5 rounded-full border border-orange-200/50 shadow-sm">
-            <Clock className="w-3 h-3 text-orange-500" />
-            <span className="text-xs font-semibold text-orange-700">
-              {timeLeftDisplay} remaining
-            </span>
+      {timeLeftDisplay &&
+        selectedDate.toDateString() === today.toDateString() &&
+        challengeSettings?.isActive &&
+        !challengeSettings?.isPaused && (
+          <div className="flex items-center justify-center mt-2">
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-50 to-red-50 px-3 py-1.5 rounded-full border border-orange-200/50 shadow-sm">
+              <Clock className="w-3 h-3 text-orange-500" />
+              <span className="text-xs font-semibold text-orange-700">
+                {timeLeftDisplay} remaining
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
@@ -796,13 +813,16 @@ const ParticipantDashboard: React.FC = () => {
 
   // Update selectedDate when challenge settings change
   useEffect(() => {
-    if (challengeSettings?.challengeDays && challengeSettings.challengeDays.length > 0) {
+    if (
+      challengeSettings?.challengeDays &&
+      challengeSettings.challengeDays.length > 0
+    ) {
       // Find today's challenge day or the closest available day
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // First try to find today's scheduled day
-      const todaysDay = challengeSettings.challengeDays.find(day => {
+      const todaysDay = challengeSettings.challengeDays.find((day) => {
         if (day.scheduledDate) {
           const scheduledDate = day.scheduledDate.toDate();
           const scheduledDateStart = new Date(scheduledDate);
@@ -817,9 +837,9 @@ const ParticipantDashboard: React.FC = () => {
       } else {
         // If no exact match, find the current day based on currentDay
         const currentChallengeDay = challengeSettings.challengeDays.find(
-          day => day.dayNumber === challengeSettings.currentDay
+          (day) => day.dayNumber === challengeSettings.currentDay
         );
-        
+
         if (currentChallengeDay && currentChallengeDay.scheduledDate) {
           setSelectedDate(currentChallengeDay.scheduledDate.toDate());
         }
@@ -827,19 +847,17 @@ const ParticipantDashboard: React.FC = () => {
     }
   }, [challengeSettings]);
 
-
-
   // Note: Auto-advance functionality disabled to prevent Firestore errors
   // Manual day advancement should be done through admin panel
   useEffect(() => {
     // This effect is intentionally minimal to avoid auto-advance issues
     if (!challengeSettings?.isActive) return;
-    
+
     // Just log the current state without making changes
-    console.log('Challenge state:', {
+    console.log("Challenge state:", {
       currentDay: challengeSettings.currentDay,
       isActive: challengeSettings.isActive,
-      isPaused: challengeSettings.isPaused
+      isPaused: challengeSettings.isPaused,
     });
   }, [challengeSettings]);
 
@@ -964,54 +982,61 @@ const ParticipantDashboard: React.FC = () => {
     const today = new Date();
     const todayStart = new Date(today);
     todayStart.setHours(0, 0, 0, 0);
-    
+
     const selectedDateStart = new Date(selectedDate);
     selectedDateStart.setHours(0, 0, 0, 0);
-    
-    const daysDiff = Math.floor((todayStart.getTime() - selectedDateStart.getTime()) / (24 * 60 * 60 * 1000));
+
+    const daysDiff = Math.floor(
+      (todayStart.getTime() - selectedDateStart.getTime()) /
+        (24 * 60 * 60 * 1000)
+    );
     const isFuture = selectedDateStart.getTime() > todayStart.getTime();
-    
+
     // Lock future dates and dates more than 1 day ago
     if (isFuture || daysDiff > 1) {
       return false;
     }
 
     // Find the challenge day that matches the selected date
-    const matchingChallengeDay = challengeSettings.challengeDays?.find(day => {
-      if (day.scheduledDate) {
-        const scheduledDate = day.scheduledDate.toDate();
-        const scheduledDateStart = new Date(scheduledDate);
-        scheduledDateStart.setHours(0, 0, 0, 0);
-        return scheduledDateStart.getTime() === selectedDateStart.getTime();
+    const matchingChallengeDay = challengeSettings.challengeDays?.find(
+      (day) => {
+        if (day.scheduledDate) {
+          const scheduledDate = day.scheduledDate.toDate();
+          const scheduledDateStart = new Date(scheduledDate);
+          scheduledDateStart.setHours(0, 0, 0, 0);
+          return scheduledDateStart.getTime() === selectedDateStart.getTime();
+        }
+        return false;
       }
-      return false;
-    });
+    );
 
     if (!matchingChallengeDay) {
       return false;
     }
 
     // Allow editing only if within the allowed time range and day is unlocked in challenge
-    return task.dayNumber === matchingChallengeDay.dayNumber && 
-           task.dayNumber <= challengeSettings.currentDay;
+    return (
+      task.dayNumber === matchingChallengeDay.dayNumber &&
+      task.dayNumber <= challengeSettings.currentDay
+    );
   };
 
   // Show tasks for selected date (always show all tasks, control editability separately)
   const getCurrentDayTasks = (): Task[] => {
     if (!challengeSettings) {
-      console.log('No challenge settings');
+      console.log("No challenge settings");
       return [];
     }
     if (!challengeSettings.isActive) {
-      console.log('Challenge not active');
+      console.log("Challenge not active");
       return [];
     }
     if (challengeSettings.isPaused) {
-      console.log('Challenge paused');
+      console.log("Challenge paused");
       return [];
     }
     if (!hasChallengeStarted()) {
-      console.log('Challenge not started');
+      console.log("Challenge not started");
       return [];
     }
 
@@ -1019,36 +1044,48 @@ const ParticipantDashboard: React.FC = () => {
     const selectedDateStart = new Date(selectedDate);
     selectedDateStart.setHours(0, 0, 0, 0);
 
-    const matchingChallengeDay = challengeSettings.challengeDays?.find(day => {
-      if (day.scheduledDate) {
-        const scheduledDate = day.scheduledDate.toDate();
-        const scheduledDateStart = new Date(scheduledDate);
-        scheduledDateStart.setHours(0, 0, 0, 0);
-        return scheduledDateStart.getTime() === selectedDateStart.getTime();
+    const matchingChallengeDay = challengeSettings.challengeDays?.find(
+      (day) => {
+        if (day.scheduledDate) {
+          const scheduledDate = day.scheduledDate.toDate();
+          const scheduledDateStart = new Date(scheduledDate);
+          scheduledDateStart.setHours(0, 0, 0, 0);
+          return scheduledDateStart.getTime() === selectedDateStart.getTime();
+        }
+        return false;
       }
-      return false;
-    });
+    );
 
     if (!matchingChallengeDay) {
-      console.log('No matching challenge day for selected date');
+      console.log("No matching challenge day for selected date");
       return [];
     }
 
     const targetDay = matchingChallengeDay.dayNumber;
 
-    console.log('Target day for filtering:', targetDay, 'for date:', selectedDate.toDateString());
+    console.log(
+      "Target day for filtering:",
+      targetDay,
+      "for date:",
+      selectedDate.toDateString()
+    );
 
     const filteredTasks = tasks.filter((task) => {
       // Skip day 0 tasks if trial is disabled
       if (!challengeSettings.trialEnabled && task.dayNumber === 0) {
         return false;
       }
-      
+
       return task.dayNumber === targetDay;
     });
 
-    console.log('Filtered tasks:', filteredTasks.length, 'tasks for day', targetDay);
-    
+    console.log(
+      "Filtered tasks:",
+      filteredTasks.length,
+      "tasks for day",
+      targetDay
+    );
+
     return filteredTasks;
   };
 
@@ -1465,7 +1502,7 @@ const ParticipantDashboard: React.FC = () => {
           challengeSettings={challengeSettings}
           onSignOut={signOut}
         />
-        
+
         {/* Date Strip - only show on challenges tab */}
         {currentTab === "challenges" && challengeSettings?.isActive && (
           <DateStrip
@@ -1505,34 +1542,48 @@ const ParticipantDashboard: React.FC = () => {
                               const selectedDateStart = new Date(selectedDate);
                               selectedDateStart.setHours(0, 0, 0, 0);
 
-                              const matchingChallengeDay = challengeSettings?.challengeDays?.find(day => {
-                                if (day.scheduledDate) {
-                                  const scheduledDate = day.scheduledDate.toDate();
-                                  const scheduledDateStart = new Date(scheduledDate);
-                                  scheduledDateStart.setHours(0, 0, 0, 0);
-                                  return scheduledDateStart.getTime() === selectedDateStart.getTime();
-                                }
-                                return false;
-                              });
+                              const matchingChallengeDay =
+                                challengeSettings?.challengeDays?.find(
+                                  (day) => {
+                                    if (day.scheduledDate) {
+                                      const scheduledDate =
+                                        day.scheduledDate.toDate();
+                                      const scheduledDateStart = new Date(
+                                        scheduledDate
+                                      );
+                                      scheduledDateStart.setHours(0, 0, 0, 0);
+                                      return (
+                                        scheduledDateStart.getTime() ===
+                                        selectedDateStart.getTime()
+                                      );
+                                    }
+                                    return false;
+                                  }
+                                );
 
                               if (matchingChallengeDay) {
-                                return matchingChallengeDay.dayNumber === 0 && challengeSettings?.trialEnabled
+                                return matchingChallengeDay.dayNumber === 0 &&
+                                  challengeSettings?.trialEnabled
                                   ? "Trial Day Tasks"
                                   : `Day ${matchingChallengeDay.dayNumber} Tasks`;
                               }
-                              
+
                               return "Tasks";
                             })()}
                           </h3>
                           <p className="text-xs text-gray-500">
-                            {currentDayCompletedTasks} of {currentDayTasks.length} completed
+                            {currentDayCompletedTasks} of{" "}
+                            {currentDayTasks.length} completed
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Compact Progress Circle */}
                       <div className="relative w-12 h-12">
-                        <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
+                        <svg
+                          className="w-12 h-12 transform -rotate-90"
+                          viewBox="0 0 48 48"
+                        >
                           <circle
                             cx="24"
                             cy="24"
@@ -1550,7 +1601,9 @@ const ParticipantDashboard: React.FC = () => {
                             strokeWidth="3"
                             fill="none"
                             strokeDasharray={`${2 * Math.PI * 20}`}
-                            strokeDashoffset={`${2 * Math.PI * 20 * (1 - progressPercentage / 100)}`}
+                            strokeDashoffset={`${
+                              2 * Math.PI * 20 * (1 - progressPercentage / 100)
+                            }`}
                             className="text-blue-500 transition-all duration-500"
                             strokeLinecap="round"
                           />
@@ -1632,7 +1685,9 @@ const ParticipantDashboard: React.FC = () => {
                               isUpdating={isUpdating}
                               onClick={() => handleTaskClick(task)}
                               sequenceNumber={index}
-                              trackingDate={getTrackingDateForDay(task.dayNumber)}
+                              trackingDate={getTrackingDateForDay(
+                                task.dayNumber
+                              )}
                             />
                           );
                         })}
@@ -1668,7 +1723,9 @@ const ParticipantDashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                      <span className="text-xs font-bold text-amber-700">Live</span>
+                      <span className="text-xs font-bold text-amber-700">
+                        Live
+                      </span>
                     </div>
                   </div>
                 </div>
