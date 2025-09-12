@@ -1198,7 +1198,7 @@ export const stopChallenge = async (): Promise<void> => {
   try {
     console.log('🛑 STOP CHALLENGE: Starting to stop challenge...');
 
-    // Simple test - just update the settings first
+    // Update challenge settings using the helper function
     const settings: Partial<ChallengeSettings> = {
       isActive: false,
       isPaused: false,
@@ -1206,29 +1206,14 @@ export const stopChallenge = async (): Promise<void> => {
       pausedAt: null,
       resumedAt: null,
       // Mark challenge as ended now and clear any future schedules to prevent auto-restart
-      endDate: serverTimestamp(),
+      startDate: null,
+      endDate: null,
       scheduledStartDate: null,
-      scheduledEndDate: null,
-      updatedAt: serverTimestamp()
+      scheduledEndDate: null
     };
 
     console.log('🛑 STOP CHALLENGE: Updating challenge settings to inactive...', settings);
-
-    // Try to update settings directly first
-    const settingsRef = doc(db, 'settings', 'challenge');
-    console.log('🛑 STOP CHALLENGE: Settings ref created:', settingsRef);
-
-    await updateDoc(settingsRef, {
-      isActive: false,
-      isPaused: false,
-      currentDay: 0,
-      pausedAt: null,
-      resumedAt: null,
-      endDate: serverTimestamp(),
-      scheduledStartDate: null,
-      scheduledEndDate: null,
-      updatedAt: serverTimestamp()
-    });
+    await updateChallengeSettings(settings);
 
     console.log('🛑 STOP CHALLENGE: Challenge settings updated successfully');
 
